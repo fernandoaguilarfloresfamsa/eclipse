@@ -44,18 +44,21 @@ public class BuscaArchivos {
 	static String msg = null;
 
 	public static void main(String[] args) throws BuscaArchivosExc {
+
+		try {
+			BuscaArchivos.inicio();
+		} catch (BuscaArchivosExc e1) {
+			logger.log(Level.SEVERE, e1.toString(), e1);
+			throw new BuscaArchivosExc(e1.toString(), e1);
+		}
+    	
     	String parametros = null;
-        for (String s: args) {
+    	for (String s: args) {
         	parametros = s;
         }
-        if (parametros!=null) {
+
+    	if (parametros!=null) {
         	archivo=args[0];
-			try {
-				BuscaArchivos.inicio();
-			} catch (BuscaArchivosExc e1) {
-				logger.log(Level.SEVERE, e1.toString(), e1);
-				throw new BuscaArchivosExc(e1.toString(), e1);
-			}
 			try {
 				BuscaArchivos.findFiles();
 			} catch (BuscaArchivosExc e) {
@@ -63,6 +66,7 @@ public class BuscaArchivos {
 				throw new BuscaArchivosExc(e.toString(), e);
 			}
         } else {
+        	logger.log(Level.SEVERE,"FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
         	throw new BuscaArchivosExc("FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
         }
 	}
@@ -72,12 +76,11 @@ public class BuscaArchivos {
 		try {
 			obtenerConfiguracion();
 		} catch (BuscaArchivosExc e1) {
-			logger.log(Level.SEVERE, e1.toString(), e1);
 			throw new BuscaArchivosExc(e1.toString(), e1);
 		}
 		
 		creaCarpeta(configuracion.getHilo().getPathLogErr());
-		creaCarpeta(configuracion.getFolder().getXml());
+		creaCarpeta(configuracion.getFolder().getEncontrados());
 
 		Date date = new Date();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS-");
@@ -87,7 +90,6 @@ public class BuscaArchivos {
 		try {
 			fileHandler = new FileHandler(nomArc);
 		} catch (SecurityException | IOException e) {
-			logger.log(Level.SEVERE, e.toString(), e);
 			throw new BuscaArchivosExc(e.toString(), e);
 		}
 		logger.addHandler(fileHandler);
@@ -176,7 +178,7 @@ public class BuscaArchivos {
 			archivosEnCarpeta.getListArchivo().add(unArchivo);
         }
 
-		archivoXML = configuracion.getFolder().getXml()+archivo;
+		archivoXML = configuracion.getFolder().getEncontrados()+archivo;
     	File arch = new File(archivoXML);
     	if (!arch.exists()) {
     		File file = new File(archivoXML);
@@ -211,7 +213,6 @@ public class BuscaArchivos {
     		msg = String.format("EL NOMBRE DE ARCHIVO XML YA EXISTE [%s].", archivoXML);
     		logger.log(Level.INFO, msg);
     	}
-		
     }
     
 }

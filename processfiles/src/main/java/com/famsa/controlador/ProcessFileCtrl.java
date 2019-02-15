@@ -77,7 +77,7 @@ public class ProcessFileCtrl implements IProcessFile {
     	}
     	
     	creaCarpeta(configXML.getFolder().getEntrada());
-    	creaCarpeta(configXML.getFolder().getXml());
+    	creaCarpeta(configXML.getFolder().getEncontrados());
 
 		return configXML;
 	}
@@ -180,7 +180,7 @@ public class ProcessFileCtrl implements IProcessFile {
 	private Folder creaFolder() {
 		Folder folder = new Folder();
 		folder.setEntrada(tokens[0]+"\\Expedientes\\Entrada\\");
-		folder.setXml(tokens[0]+"\\Expedientes\\XML\\");
+		folder.setEncontrados(tokens[0]+"\\Expedientes\\Proceso\\001-Encontrados\\");
 		folder.setImagenTif(tokens[0]+"\\Expedientes\\Temporal\\Imagen\\Tif\\%BC(1)%\\");
 		folder.setImagenDifTif(tokens[0]+"\\Expedientes\\Error\\Imagen\\DifTif\\%BC(1)%\\");
 		folder.setImagenFallo(tokens[0]+"\\Expedientes\\Error\\Imagen\\Tif\\%BC(1)%\\");
