@@ -1,8 +1,20 @@
 package com.famsa.controlador;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -10,6 +22,7 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.PropertyException;
 import javax.xml.bind.Unmarshaller;
 
+import com.famsa.aplicacion.AsignaArchivos;
 import com.famsa.bean.Campo;
 import com.famsa.bean.Campos;
 import com.famsa.bean.ConexionBD;
@@ -17,17 +30,24 @@ import com.famsa.bean.Configuracion;
 import com.famsa.bean.Folder;
 import com.famsa.bean.Hilo;
 import com.famsa.bean.Monitor;
+import com.famsa.bean.ProcessFileBean;
 import com.famsa.bean.Tabla;
+import com.famsa.enums.BDEnum;
 import com.famsa.exceptions.ProcessFileCtrlExc;
+import com.famsa.fabricas.BaseDatosFactory;
+import com.famsa.interfaces.IBaseDatosConexion;
 import com.famsa.interfaces.IProcessFile;
+import com.google.gson.Gson;
 
 public class ProcessFileCtrl implements IProcessFile {
 
+	static final Logger logger = Logger.getLogger(AsignaArchivos.class.getName());
 	private static final String FECHAARCHIVO = "FECHA_ARCHIVO";  
 	private static final String RUTATXT = "ruta.txt";
 	private static final String CADENASPLIT = "\\\\(?=[^\\\\]+$)";
 	private static final String CARPETACONFIG = "\\Expedientes\\Config\\";
 	private static final String XMLFILE = "config.xml";
+	static ProcessFileBean proFilBean = null;
 	String nomArcConf = null;
 	String nomCarpeta = null;
 	String[] tokens;
@@ -260,5 +280,91 @@ public class ProcessFileCtrl implements IProcessFile {
 
 		return preAutorizacion;
 	}
+
+	@Override
+	public String generaJson(String paramXMLFileName, String paramCreationTime, 
+			String paramFilePath, String paramUuid) throws ProcessFileCtrlExc {
+
+		proFilBean.setXmlFileName(paramXMLFileName);
+		//proFilBean.setCreationTime(paramCreationTime);
+		//proFilBean.setFilePath(paramFilePath);
+		//proFilBean.setUuid(paramUuid);
+		
+		/*Path p = Paths.get(proFilBean.getFilePath());
+		proFilBean.setPath(p.getParent().toString());
+		proFilBean.setFile(p.getFileName().toString());
+		proFilBean.setExtension("tiff");*/
+			
+        /*MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("SHA-256");	// SHA, MD2, MD5, SHA-256, SHA-384...
+		} catch (NoSuchAlgorithmException e) {
+			logger.log(Level.SEVERE, e.toString(), e);
+			throw new ProcessFileCtrlExc(e.toString(), e);
+		}
+		try {
+			String hex = checksum(proFilBean.getFilePath(), md);
+			proFilBean.setHash(hex);
+		} catch (IOException e) {
+			logger.log(Level.SEVERE, e.toString(), e);
+			throw new ProcessFileCtrlExc(e.toString(), e);
+		}*/		
+
+		//ProcessFileCtrl.guardaDatos();
+		
+		Gson gson = new Gson();
+		
+		return gson.toJson(proFilBean);
+	}
+
+    /*private static String checksum(String filepath, MessageDigest md) throws IOException {
+	
+        // file hashing with DigestInputStream
+        try (DigestInputStream dis = new DigestInputStream(new FileInputStream(filepath), md)) {
+            while (dis.read() != -1) ; //empty loop to clear the data
+            md = dis.getMessageDigest();
+        }
+	
+        // bytes to hex
+        StringBuilder result = new StringBuilder();
+        for (byte b : md.digest()) {
+            result.append(String.format("%02x", b));
+        }
+        return result.toString();
+	
+    }
+
+    public static int guardaDatos() throws ProcessFileCtrlExc {
+    
+    	int cuantos = 0;
+    	
+    	IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
+    	try (Connection conn = baseDatosConexion.getConnection()) {
+			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE] ( ? , ? , ? , ? , ? , ? , ? , ? ) }";
+			
+			try (CallableStatement cstmt = conn.prepareCall(sql)) {
+				cstmt.setString(1, proFilBean.getXmlFileName());
+				cstmt.setString(2, proFilBean.getCreationTime());
+				cstmt.setString(3, proFilBean.getFilePath());
+				cstmt.setString(4, proFilBean.getUuid());
+				cstmt.setString(5, proFilBean.getPath());
+				cstmt.setString(6, proFilBean.getFile());
+				cstmt.setString(7, proFilBean.getExtension());
+				cstmt.setString(8, proFilBean.getHash());
+			
+				try (ResultSet resultSet = cstmt.executeQuery()) {
+					
+					while(resultSet.next()) {
+						cuantos = resultSet.getInt("CUANTOS");
+					}
+				}
+			}
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, e.toString(), e);
+			throw new ProcessFileCtrlExc("#"+e.toString(), e);
+		}
+		
+    	return cuantos;
+    }*/
 	
 }

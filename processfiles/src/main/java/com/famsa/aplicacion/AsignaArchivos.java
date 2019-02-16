@@ -22,7 +22,7 @@ import com.famsa.interfaces.IProcessFile;
 
 public class AsignaArchivos {
 
-	static final Logger logger = Logger.getLogger(BuscaArchivos.class.getName());
+	static final Logger logger = Logger.getLogger(AsignaArchivos.class.getName());
 	static FileHandler fileHandler;
 	static Configuracion configuracion = null;
 	static String archivoXML;

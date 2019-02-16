@@ -12,4 +12,9 @@ public class ProcessFileFactory {
 	public static IProcessFile buscaConfiguracion() {
 		return new ProcessFileCtrl();
 	}
+	
+	public static IProcessFile createJson() {
+		return new ProcessFileCtrl();
+	}
+	
 }
