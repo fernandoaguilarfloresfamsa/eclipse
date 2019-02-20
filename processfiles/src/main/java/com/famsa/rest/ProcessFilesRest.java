@@ -15,27 +15,27 @@ import com.famsa.interfaces.IProcessFile;
 @Path("/processfiles")
 public class ProcessFilesRest {
 
-	//private static final String MYRESULTADOEXC = "[{\"idException\": %d, \"msgException\": \"%s\"}]";
+	private static final String MYRESULTADOEXC = "[{\"idException\": %d, \"msgException\": \"%s\"}]";
 	
 	@GET
-	@Path("/buscaArchivos/{xmlFileName : .*}/{creationTime}/{filePath : .*}/{uuid}")
+	@Path("/buscaArchivos/{filePath : .*}/{uuid}/{creationTime}/{xmlFileName : .*}")
     @Produces(MediaType.APPLICATION_JSON)
 	public Response getBuscaArchivos(
-			@DefaultValue("xmlFileName") @PathParam("xmlFileName") String paramXMLFileName,
-			@DefaultValue("creationTime") @PathParam("creationTime") String paramCreationTime,
 			@DefaultValue("filePath") @PathParam("filePath") String paramFilePath,
-			@DefaultValue("uuid") @PathParam("uuid") String paramUuid) throws ProcessFileCtrlExc {
+			@DefaultValue("uuid") @PathParam("uuid") String paramUuid,
+			@DefaultValue("creationTime") @PathParam("creationTime") String paramCreationTime,
+			@DefaultValue("xmlFileName") @PathParam("xmlFileName") String paramXMLFileName) throws ProcessFileCtrlExc {
 		
 		String strJSON;
 		IProcessFile proFile = ProcessFileFactory.createJson();
-		//try {
-			strJSON = proFile.generaJson(paramXMLFileName, paramCreationTime, 
-					paramFilePath, paramUuid);
-		//} catch (ProcessFileCtrlExc e) {
-		//	String resultado = String.format(MYRESULTADOEXC, 7000, 
-		//			e.toString().substring((e.toString().indexOf('#') + 1), (e.toString().length())));
-		//	return Response.status(200).entity(resultado).build();
-		//}
+		try {
+			strJSON = proFile.generaJson( 
+					paramFilePath, paramUuid, paramCreationTime, paramXMLFileName);
+		} catch (ProcessFileCtrlExc e) {
+			String resultado = String.format(MYRESULTADOEXC, 7000, 
+					e.toString().substring((e.toString().indexOf('#') + 1), (e.toString().length())));
+			return Response.status(200).entity(resultado).build();
+		}
 		
 		return Response.status(200).entity(strJSON).build();
 

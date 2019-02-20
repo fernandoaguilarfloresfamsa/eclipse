@@ -10,7 +10,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -47,7 +46,7 @@ public class ProcessFileCtrl implements IProcessFile {
 	private static final String CADENASPLIT = "\\\\(?=[^\\\\]+$)";
 	private static final String CARPETACONFIG = "\\Expedientes\\Config\\";
 	private static final String XMLFILE = "config.xml";
-	static ProcessFileBean proFilBean = null;
+	static ProcessFileBean proFilBean = new ProcessFileBean();
 	String nomArcConf = null;
 	String nomCarpeta = null;
 	String[] tokens;
@@ -282,20 +281,23 @@ public class ProcessFileCtrl implements IProcessFile {
 	}
 
 	@Override
-	public String generaJson(String paramXMLFileName, String paramCreationTime, 
-			String paramFilePath, String paramUuid) throws ProcessFileCtrlExc {
+	public String generaJson(String paramFilePath, String paramUuid, 
+			String paramCreationTime, String paramXMLFileName) throws ProcessFileCtrlExc {
+		 
+		String path = paramFilePath.substring(0, paramFilePath.lastIndexOf('/'));	
+		Path p = Paths.get(paramFilePath);
+		String fileName = p.getFileName().toString();
+		String ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length());
 
 		proFilBean.setXmlFileName(paramXMLFileName);
-		//proFilBean.setCreationTime(paramCreationTime);
-		//proFilBean.setFilePath(paramFilePath);
-		//proFilBean.setUuid(paramUuid);
-		
-		/*Path p = Paths.get(proFilBean.getFilePath());
-		proFilBean.setPath(p.getParent().toString());
-		proFilBean.setFile(p.getFileName().toString());
-		proFilBean.setExtension("tiff");*/
+		proFilBean.setCreationTime(paramCreationTime);
+		proFilBean.setFilePath(paramFilePath);
+		proFilBean.setUuid(paramUuid);
+		proFilBean.setPath(path);
+		proFilBean.setFile(fileName);
+		proFilBean.setExtension(ext);
 			
-        /*MessageDigest md;
+        MessageDigest md;
 		try {
 			md = MessageDigest.getInstance("SHA-256");	// SHA, MD2, MD5, SHA-256, SHA-384...
 		} catch (NoSuchAlgorithmException e) {
@@ -308,16 +310,16 @@ public class ProcessFileCtrl implements IProcessFile {
 		} catch (IOException e) {
 			logger.log(Level.SEVERE, e.toString(), e);
 			throw new ProcessFileCtrlExc(e.toString(), e);
-		}*/		
+		}		
 
-		//ProcessFileCtrl.guardaDatos();
+		ProcessFileCtrl.guardaDatos();
 		
 		Gson gson = new Gson();
 		
 		return gson.toJson(proFilBean);
 	}
 
-    /*private static String checksum(String filepath, MessageDigest md) throws IOException {
+    private static String checksum(String filepath, MessageDigest md) throws IOException {
 	
         // file hashing with DigestInputStream
         try (DigestInputStream dis = new DigestInputStream(new FileInputStream(filepath), md)) {
@@ -334,13 +336,14 @@ public class ProcessFileCtrl implements IProcessFile {
 	
     }
 
-    public static int guardaDatos() throws ProcessFileCtrlExc {
+    public static void guardaDatos() throws ProcessFileCtrlExc {
     
-    	int cuantos = 0;
+		int errorInt = 0;
+		String errorMsg = null;
     	
     	IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
     	try (Connection conn = baseDatosConexion.getConnection()) {
-			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE] ( ? , ? , ? , ? , ? , ? , ? , ? ) }";
+			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE] ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) }";
 			
 			try (CallableStatement cstmt = conn.prepareCall(sql)) {
 				cstmt.setString(1, proFilBean.getXmlFileName());
@@ -351,20 +354,37 @@ public class ProcessFileCtrl implements IProcessFile {
 				cstmt.setString(6, proFilBean.getFile());
 				cstmt.setString(7, proFilBean.getExtension());
 				cstmt.setString(8, proFilBean.getHash());
+				
+				cstmt.registerOutParameter(9, java.sql.Types.INTEGER);
+				cstmt.registerOutParameter(10, java.sql.Types.VARCHAR);
 			
-				try (ResultSet resultSet = cstmt.executeQuery()) {
+				cstmt.executeUpdate();
+				
+				errorInt = cstmt.getInt(9);
+				errorMsg = cstmt.getString(10);
+				
+				if (errorInt!=0) {
+					proFilBean.setErrorInt(errorInt);
+					proFilBean.setErrorMsg(errorMsg);
 					
-					while(resultSet.next()) {
-						cuantos = resultSet.getInt("CUANTOS");
-					}
+					proFilBean.setCreationTime(null);
+					proFilBean.setExtension(null);
+					proFilBean.setFile(null);
+					proFilBean.setFilePath(null);
+					proFilBean.setHash(null);
+					proFilBean.setPath(null);
+					proFilBean.setUuid(null);
+					proFilBean.setXmlFileName(null);
+					
+					logger.log(Level.SEVERE, errorMsg, new Object());
 				}
+				
 			}
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, e.toString(), e);
 			throw new ProcessFileCtrlExc("#"+e.toString(), e);
 		}
 		
-    	return cuantos;
-    }*/
+    }
 	
 }

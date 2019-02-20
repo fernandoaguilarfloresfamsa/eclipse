@@ -10,6 +10,8 @@ public class ProcessFileBean {
 	private String file;
 	private String extension;
 	private String hash;
+	private int errorInt;
+	private String errorMsg;
 	
 	public ProcessFileBean() {
 		super();
@@ -63,12 +65,24 @@ public class ProcessFileBean {
 	public void setHash(String hash) {
 		this.hash = hash;
 	}
+	public int getErrorInt() {
+		return errorInt;
+	}
+	public void setErrorInt(int errorInt) {
+		this.errorInt = errorInt;
+	}
+	public String getErrorMsg() {
+		return errorMsg;
+	}
+	public void setErrorMsg(String errorMsg) {
+		this.errorMsg = errorMsg;
+	}
 
 	@Override
 	public String toString() {
 		return "ProcessFileBean [xmlFileName=" + xmlFileName + ", creationTime=" + creationTime + ", filePath="
 				+ filePath + ", uuid=" + uuid + ", path=" + path + ", file=" + file + ", extension=" + extension
-				+ ", hash=" + hash + "]";
+				+ ", hash=" + hash + ", errorInt=" + errorInt + ", errorMsg=" + errorMsg + "]";
 	}
 	
 }
