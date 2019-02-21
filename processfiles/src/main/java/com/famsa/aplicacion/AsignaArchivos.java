@@ -23,8 +23,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import org.codehaus.jackson.jaxrs.JacksonJaxbJsonProvider;
-
 import com.famsa.bean.Archivos;
 import com.famsa.bean.Configuracion;
 import com.famsa.bean.ProcessFileBean;
@@ -188,23 +186,21 @@ public class AsignaArchivos {
     			creationTime, 
     			archivoXML);
     	
-		ClientConfig config = new DefaultClientConfig();
-	    config.getClasses().add(JacksonJaxbJsonProvider.class);
-	    config.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
-		Client client = Client.create(config);
-		WebResource webResource = client.resource(miUrl);
-		ClientResponse response = null;
-		try {
-			response = webResource.accept("application/json").get(ClientResponse.class);
-		} catch(Exception e) {
-			logger.log(Level.SEVERE, e.toString(), e);
-			throw new ProcessFileCtrlExc(e.toString(), e);
-		}    	
-		if (response.hasEntity()) {
-			String output = response.getEntity(String.class);
-			Gson gson = new Gson();
-			return gson.fromJson(output, ProcessFileBean.class);
-		}
+    	ClientConfig clientConfig = new DefaultClientConfig();
+    	clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
+    	Client client = Client.create(clientConfig);
+
+    	WebResource webResource = client.resource(miUrl);
+
+    	//put switch, name,priority....
+    	ClientResponse response = webResource.accept("application/json")
+    	        .type("application/json").get(ClientResponse.class);    	
+    	
+    	if (response.hasEntity()) {
+    		String output = response.getEntity(String.class);
+    		Gson gson = new Gson();
+    		return gson.fromJson(output, ProcessFileBean.class);
+    	}
 		return null;
     }
     
