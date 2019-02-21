@@ -9,16 +9,12 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.CollapsedStringAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-import com.famsa.enums.EstadoEnum;
-
 @XmlRootElement(name="archivo")
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "archivo", propOrder = {
     "creationTime",
     "filePath",
-    "uuid",
-    
-	"estado"
+    "uuid"
 })
 public class Archivo {
 
@@ -30,9 +26,6 @@ public class Archivo {
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     @XmlSchemaType(name = "NMTOKEN")	
 	protected String uuid;
-	
-	@XmlElement(required = false)
-	protected EstadoEnum estado;
 	
 	public String getCreationTime() {
 		return creationTime;
@@ -52,16 +45,10 @@ public class Archivo {
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}
-	public EstadoEnum getEstado() {
-		return estado;
-	}
-	public void setEstado(EstadoEnum estado) {
-		this.estado = estado;
-	}
+	
 	@Override
 	public String toString() {
-		return "Archivo [creationTime=" + creationTime + ", filePath=" + filePath + ", uuid=" + uuid + ", estado="
-				+ estado + "]";
+		return "Archivo [creationTime=" + creationTime + ", filePath=" + filePath + ", uuid=" + uuid + "]";
 	}
 	
 }

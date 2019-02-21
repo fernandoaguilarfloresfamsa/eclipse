@@ -1,5 +1,17 @@
 package com.famsa.aplicacion;
 
+/*
+ * Autor:	Fernando Aguilar Flores.
+ * 
+ * Parametros de Entrada
+ * 			Nombre del archivo donde se guardan los files ordenados por fecha y hora de creacion.
+ * 
+ * Descripción
+ * 			crea el sistema de carpetas necesarias para el funcionamiento del sistema.
+ * 			busca en el directorio de entrada los archivos para procesar.
+ * 			guarda la lista de los archivos en el archivo que recibio como parametro de entrada.
+ * 
+ */
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
