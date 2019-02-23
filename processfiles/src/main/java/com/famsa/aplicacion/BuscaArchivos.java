@@ -48,8 +48,8 @@ import com.famsa.interfaces.IProcessFile;
 
 public class BuscaArchivos {
 	
-	static final Logger logger = Logger.getLogger(BuscaArchivos.class.getName());
-	static FileHandler fileHandler;
+	static final Logger logBuscaArchivos = Logger.getLogger(BuscaArchivos.class.getName());
+	static FileHandler fhBuscaArchivos;
 	static Configuracion configuracion = null;
 	static String archivo;
 	static String archivoXML;
@@ -60,7 +60,6 @@ public class BuscaArchivos {
 		try {
 			BuscaArchivos.inicio();
 		} catch (BuscaArchivosExc e1) {
-			logger.log(Level.SEVERE, e1.toString(), e1);
 			throw new BuscaArchivosExc(e1.toString(), e1);
 		}
     	
@@ -74,11 +73,11 @@ public class BuscaArchivos {
 			try {
 				BuscaArchivos.findFiles();
 			} catch (BuscaArchivosExc e) {
-				logger.log(Level.SEVERE, e.toString(), e);
+				logBuscaArchivos.log(Level.SEVERE, e.toString(), e);
 				throw new BuscaArchivosExc(e.toString(), e);
 			}
         } else {
-        	logger.log(Level.SEVERE,"FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
+        	logBuscaArchivos.log(Level.SEVERE,"FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
         	throw new BuscaArchivosExc("FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
         }
 	}
@@ -100,15 +99,15 @@ public class BuscaArchivos {
 				configuracion.getHilo().getPathLogErr(), dateFormat.format(date), 
 				BuscaArchivos.class.getName());
 		try {
-			fileHandler = new FileHandler(nomArc);
+			fhBuscaArchivos = new FileHandler(nomArc);
 		} catch (SecurityException | IOException e) {
 			throw new BuscaArchivosExc(e.toString(), e);
 		}
-		logger.addHandler(fileHandler);
+		logBuscaArchivos.addHandler(fhBuscaArchivos);
 		SimpleFormatter formatter = new SimpleFormatter();
-		fileHandler.setFormatter(formatter);
-		fileHandler.setLevel(Level.ALL);
-		logger.setLevel(Level.ALL);		
+		fhBuscaArchivos.setFormatter(formatter);
+		fhBuscaArchivos.setLevel(Level.ALL);
+		logBuscaArchivos.setLevel(Level.ALL);		
 	}
 
 	private static void obtenerConfiguracion() throws BuscaArchivosExc {
@@ -116,7 +115,7 @@ public class BuscaArchivos {
 		try {
 			configuracion = config.findConfiguration();
 		} catch (ProcessFileCtrlExc e) {
-			logger.log(Level.SEVERE, e.toString(), e);
+			logBuscaArchivos.log(Level.SEVERE, e.toString(), e);
 			throw new BuscaArchivosExc(e.toString(), e);
 		}
 	}
@@ -141,7 +140,7 @@ public class BuscaArchivos {
 				try {
 					attributes = Files.readAttributes(filePath, BasicFileAttributes.class);
 				} catch (IOException e) {
-					logger.log(Level.SEVERE, e.toString(), e);
+					logBuscaArchivos.log(Level.SEVERE, e.toString(), e);
 					throw new BuscaArchivosExc(e.toString(), e);
 				}
             	fileTime = attributes.creationTime();
@@ -154,11 +153,11 @@ public class BuscaArchivos {
 	        try {
 				marshalListToXMLFile(treeMap);
 			} catch (BuscaArchivosExc e) {
-				logger.log(Level.SEVERE, e.toString(), e);
+				logBuscaArchivos.log(Level.SEVERE, e.toString(), e);
 				throw new BuscaArchivosExc(e.toString(), e);
 			}
         } else {
-        	logger.log(Level.INFO, "NO EXISTEN ARCHIVOS PARA PROCESAR.");
+        	logBuscaArchivos.log(Level.INFO, "NO EXISTEN ARCHIVOS PARA PROCESAR.");
         }
 
 	}
@@ -199,31 +198,31 @@ public class BuscaArchivos {
 			try {
 				jaxbContext = JAXBContext.newInstance(Archivos.class);
 			} catch (JAXBException e3) {
-				logger.log(Level.SEVERE, e3.toString(), e3);
+				logBuscaArchivos.log(Level.SEVERE, e3.toString(), e3);
 				throw new BuscaArchivosExc(e3.toString(), e3);
 			}
 			Marshaller jaxbMarshaller = null;
 			try {
 				jaxbMarshaller = jaxbContext.createMarshaller();
 			} catch (JAXBException e2) {
-				logger.log(Level.SEVERE, e2.toString(), e2);
+				logBuscaArchivos.log(Level.SEVERE, e2.toString(), e2);
 				throw new BuscaArchivosExc(e2.toString(), e2);
 			}
 			try {
 				jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 			} catch (PropertyException e1) {
-				logger.log(Level.SEVERE, e1.toString(), e1);
+				logBuscaArchivos.log(Level.SEVERE, e1.toString(), e1);
 				throw new BuscaArchivosExc(e1.toString(), e1);
 			}
 			try {
 				jaxbMarshaller.marshal(archivosEnCarpeta, file);
 			} catch (JAXBException e) {
-				logger.log(Level.SEVERE, e.toString(), e);
+				logBuscaArchivos.log(Level.SEVERE, e.toString(), e);
 				throw new BuscaArchivosExc(e.toString(), e);
 			}
     	} else {
     		msg = String.format("EL NOMBRE DE ARCHIVO XML YA EXISTE [%s].", archivoXML);
-    		logger.log(Level.INFO, msg);
+    		logBuscaArchivos.log(Level.INFO, msg);
     	}
     }
     

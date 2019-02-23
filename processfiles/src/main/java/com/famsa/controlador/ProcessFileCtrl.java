@@ -8,8 +8,6 @@ import java.nio.file.Paths;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.sql.CallableStatement;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -31,10 +29,7 @@ import com.famsa.bean.Hilo;
 import com.famsa.bean.Monitor;
 import com.famsa.bean.ProcessFileBean;
 import com.famsa.bean.Tabla;
-import com.famsa.enums.BDEnum;
 import com.famsa.exceptions.ProcessFileCtrlExc;
-import com.famsa.fabricas.BaseDatosFactory;
-import com.famsa.interfaces.IBaseDatosConexion;
 import com.famsa.interfaces.IProcessFile;
 import com.google.gson.Gson;
 
@@ -304,87 +299,30 @@ public class ProcessFileCtrl implements IProcessFile {
 			logger.log(Level.SEVERE, e.toString(), e);
 			throw new ProcessFileCtrlExc(e.toString(), e);
 		}
-		try {
-			String hex = checksum(proFilBean.getFilePath(), md);
-			proFilBean.setHash(hex);
-		} catch (IOException e) {
-			logger.log(Level.SEVERE, e.toString(), e);
-			throw new ProcessFileCtrlExc(e.toString(), e);
-		}		
+		
+		String hex = checksum(proFilBean.getFilePath(), md);
+		proFilBean.setHash(hex);
 
-		ProcessFileCtrl.guardaDatos();
-		
 		Gson gson = new Gson();
-		
 		return gson.toJson(proFilBean);
 	}
 
-    private static String checksum(String filepath, MessageDigest md) throws IOException {
+    private static String checksum(String filepath, MessageDigest md) throws ProcessFileCtrlExc {
 	
         // file hashing with DigestInputStream
         try (DigestInputStream dis = new DigestInputStream(new FileInputStream(filepath), md)) {
             while (dis.read() != -1) ; //empty loop to clear the data
             md = dis.getMessageDigest();
-        }
-	
+        } catch (IOException e) {
+        	logger.log(Level.SEVERE, e.toString(), e);
+        	throw new ProcessFileCtrlExc(e.toString(), e);
+		}
         // bytes to hex
         StringBuilder result = new StringBuilder();
         for (byte b : md.digest()) {
             result.append(String.format("%02x", b));
         }
         return result.toString();
-	
-    }
-
-    public static void guardaDatos() throws ProcessFileCtrlExc {
-    
-		int errorInt = 0;
-		String errorMsg = null;
-    	
-    	IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
-    	try (Connection conn = baseDatosConexion.getConnection()) {
-			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE] ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) }";
-			
-			try (CallableStatement cstmt = conn.prepareCall(sql)) {
-				cstmt.setString(1, proFilBean.getXmlFileName());
-				cstmt.setString(2, proFilBean.getCreationTime());
-				cstmt.setString(3, proFilBean.getFilePath());
-				cstmt.setString(4, proFilBean.getUuid());
-				cstmt.setString(5, proFilBean.getPath());
-				cstmt.setString(6, proFilBean.getFile());
-				cstmt.setString(7, proFilBean.getExtension());
-				cstmt.setString(8, proFilBean.getHash());
-				
-				cstmt.registerOutParameter(9, java.sql.Types.INTEGER);
-				cstmt.registerOutParameter(10, java.sql.Types.VARCHAR);
-			
-				cstmt.executeUpdate();
-				
-				errorInt = cstmt.getInt(9);
-				errorMsg = cstmt.getString(10);
-				
-				if (errorInt!=0) {
-					proFilBean.setErrorInt(errorInt);
-					proFilBean.setErrorMsg(errorMsg);
-					
-					proFilBean.setCreationTime(null);
-					proFilBean.setExtension(null);
-					proFilBean.setFile(null);
-					proFilBean.setFilePath(null);
-					proFilBean.setHash(null);
-					proFilBean.setPath(null);
-					proFilBean.setUuid(null);
-					proFilBean.setXmlFileName(null);
-					
-					logger.log(Level.SEVERE, errorMsg, new Object());
-				}
-				
-			}
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.toString(), e);
-			throw new ProcessFileCtrlExc("#"+e.toString(), e);
-		}
-		
     }
 	
 }

@@ -12,6 +12,8 @@ package com.famsa.aplicacion;
  */
 import java.io.File;
 import java.io.IOException;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.FileHandler;
@@ -26,9 +28,12 @@ import javax.xml.bind.Unmarshaller;
 import com.famsa.bean.Archivos;
 import com.famsa.bean.Configuracion;
 import com.famsa.bean.ProcessFileBean;
+import com.famsa.enums.BDEnum;
 import com.famsa.exceptions.AsignaArchivosExc;
 import com.famsa.exceptions.ProcessFileCtrlExc;
+import com.famsa.fabricas.BaseDatosFactory;
 import com.famsa.fabricas.ProcessFileFactory;
+import com.famsa.interfaces.IBaseDatosConexion;
 import com.famsa.interfaces.IProcessFile;
 import com.google.gson.Gson;
 import com.sun.jersey.api.client.Client;
@@ -40,8 +45,8 @@ import com.sun.jersey.api.json.JSONConfiguration;
 
 public class AsignaArchivos {
 
-	static final Logger logger = Logger.getLogger(AsignaArchivos.class.getName());
-	static FileHandler fileHandler;
+	static final Logger logAsignaArchivos = Logger.getLogger(AsignaArchivos.class.getName());
+	static FileHandler fhAsignaArchivos;
 	static Configuracion configuracion = null;
 	static String archivoXML;
 	static String msg = null;
@@ -50,7 +55,6 @@ public class AsignaArchivos {
 		try {
 			AsignaArchivos.inicio();
 		} catch (AsignaArchivosExc e1) {
-			logger.log(Level.SEVERE, e1.toString(), e1);
 			throw new AsignaArchivosExc(e1.toString(), e1);
 		}
     	
@@ -60,7 +64,7 @@ public class AsignaArchivos {
         }
 
     	if (parametros==null) {
-        	logger.log(Level.SEVERE,"FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
+    		logAsignaArchivos.log(Level.SEVERE,"FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
         	throw new AsignaArchivosExc("FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
     	}
 
@@ -73,7 +77,7 @@ public class AsignaArchivos {
 			try {
 				archivosParaProcesar = AsignaArchivos.unmarshalXMLToList();
 			} catch (AsignaArchivosExc e) {
-				logger.log(Level.SEVERE, e.toString(), e);
+				logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
 				throw new AsignaArchivosExc(e.toString(), e);
 			}
 		}
@@ -82,7 +86,7 @@ public class AsignaArchivos {
 
 			msg = String.format("Existen %d Archivo(s) para procesar: %s.", 
 					archivosParaProcesar.getListArchivo().size(),archivoXML);
-			logger.log(Level.INFO,msg);
+			logAsignaArchivos.log(Level.INFO,msg);
 
 			for (int num=0;num<archivosParaProcesar.getListArchivo().size();num++) {
 				
@@ -93,9 +97,13 @@ public class AsignaArchivos {
 							archivosParaProcesar.getListArchivo().get(num).getFilePath(), 
 							archivosParaProcesar.getListArchivo().get(num).getUuid());
 					
-					logger.log(Level.FINE, resultado.toString(), new Object());
+					msg = String.format("Procesando el archivo %s", resultado.getFilePath());
+					logAsignaArchivos.log(Level.INFO, msg);
+
+					AsignaArchivos.guardaDatos(resultado);
 					
 				} catch (ProcessFileCtrlExc e) {
+					logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
 					throw new AsignaArchivosExc(e.toString(), e);
 				}
 			}
@@ -117,17 +125,17 @@ public class AsignaArchivos {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS-");
 		String nomArc = String.format("%s%s%s.log", 
 				configuracion.getHilo().getPathLogErr(), dateFormat.format(date), 
-				BuscaArchivos.class.getName());
+				AsignaArchivos.class.getName());
 		try {
-			fileHandler = new FileHandler(nomArc);
+			fhAsignaArchivos = new FileHandler(nomArc);
 		} catch (SecurityException | IOException e) {
 			throw new AsignaArchivosExc(e.toString(), e);
 		}
-		logger.addHandler(fileHandler);
+		logAsignaArchivos.addHandler(fhAsignaArchivos);
 		SimpleFormatter formatter = new SimpleFormatter();
-		fileHandler.setFormatter(formatter);
-		fileHandler.setLevel(Level.ALL);
-		logger.setLevel(Level.ALL);		
+		fhAsignaArchivos.setFormatter(formatter);
+		fhAsignaArchivos.setLevel(Level.ALL);
+		logAsignaArchivos.setLevel(Level.ALL);		
 	}
 	
 	private static void obtenerConfiguracion() throws AsignaArchivosExc {
@@ -135,7 +143,7 @@ public class AsignaArchivos {
 		try {
 			configuracion = config.findConfiguration();
 		} catch (ProcessFileCtrlExc e) {
-			logger.log(Level.SEVERE, e.toString(), e);
+			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
 			throw new AsignaArchivosExc(e.toString(), e);
 		}
 	}
@@ -156,20 +164,20 @@ public class AsignaArchivos {
     		try {
     			jaxbContext = JAXBContext.newInstance(Archivos.class);
     		} catch (JAXBException e) {
-    			logger.log(Level.SEVERE, e.toString(), e);
+    			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
     			throw new AsignaArchivosExc(e.toString(), e);
     		}
             Unmarshaller jaxbUnmarshaller;
     		try {
     			jaxbUnmarshaller = jaxbContext.createUnmarshaller();
     		} catch (JAXBException e) {
-    			logger.log(Level.SEVERE, e.toString(), e);
+    			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
     			throw new AsignaArchivosExc(e.toString(), e);
     		}
             try {
     			archivosPendientes = (Archivos) jaxbUnmarshaller.unmarshal( new File(configuracion.getFolder().getEncontrados()+archivoXML));
     		} catch (JAXBException e) {
-    			logger.log(Level.SEVERE, e.toString(), e);
+    			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
     			throw new AsignaArchivosExc(e.toString(), e);
     		}
     	}
@@ -177,7 +185,7 @@ public class AsignaArchivos {
     }
 
     public static ProcessFileBean consumeWebService(
-    		String creationTime, String filePath, String uuid) throws ProcessFileCtrlExc {
+    		String creationTime, String filePath, String uuid) throws AsignaArchivosExc {
     	
     	String miUrl = String.format(
     			"http://localhost:8080/processfiles/rest/processfiles/buscaArchivos/%s/%s/%s/%s", 
@@ -185,23 +193,75 @@ public class AsignaArchivos {
     			uuid, 
     			creationTime, 
     			archivoXML);
-    	
-    	ClientConfig clientConfig = new DefaultClientConfig();
-    	clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
-    	Client client = Client.create(clientConfig);
-
-    	WebResource webResource = client.resource(miUrl);
-
-    	//put switch, name,priority....
-    	ClientResponse response = webResource.accept("application/json")
-    	        .type("application/json").get(ClientResponse.class);    	
-    	
-    	if (response.hasEntity()) {
-    		String output = response.getEntity(String.class);
-    		Gson gson = new Gson();
-    		return gson.fromJson(output, ProcessFileBean.class);
+    	try {
+	    	ClientConfig clientConfig = new DefaultClientConfig();
+	    	clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
+	    	Client client = Client.create(clientConfig);
+	
+	    	WebResource webResource = client.resource(miUrl);
+	
+	    	ClientResponse response = webResource.accept("application/json")
+	    	        .type("application/json").get(ClientResponse.class);    	
+	    	
+	    	if (response.hasEntity()) {
+	    		String output = response.getEntity(String.class);
+	    		Gson gson = new Gson();
+	    		return gson.fromJson(output, ProcessFileBean.class);
+	    	}
+    	} catch(Exception e) {
+			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
+			throw new AsignaArchivosExc(e.toString(), e);
     	}
 		return null;
     }
     
+    public static void guardaDatos(ProcessFileBean proFilBean) throws ProcessFileCtrlExc {
+        
+		int errorInt = 0;
+		String errorMsg = null;
+    	
+    	IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
+    	try (Connection conn = baseDatosConexion.getConnection()) {
+			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE] ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) }";
+			
+			try (CallableStatement cstmt = conn.prepareCall(sql)) {
+				cstmt.setString(1, proFilBean.getXmlFileName());
+				cstmt.setString(2, proFilBean.getCreationTime());
+				cstmt.setString(3, proFilBean.getFilePath());
+				cstmt.setString(4, proFilBean.getUuid());
+				cstmt.setString(5, proFilBean.getPath());
+				cstmt.setString(6, proFilBean.getFile());
+				cstmt.setString(7, proFilBean.getExtension());
+				cstmt.setString(8, proFilBean.getHash());
+				
+				cstmt.registerOutParameter(9, java.sql.Types.INTEGER);
+				cstmt.registerOutParameter(10, java.sql.Types.VARCHAR);
+			
+				cstmt.executeUpdate();
+				
+				errorInt = cstmt.getInt(9);
+				errorMsg = cstmt.getString(10);
+				
+				if (errorInt!=0) {
+					proFilBean.setErrorInt(errorInt);
+					proFilBean.setErrorMsg(errorMsg);
+					
+					proFilBean.setCreationTime(null);
+					proFilBean.setExtension(null);
+					proFilBean.setFile(null);
+					proFilBean.setFilePath(null);
+					proFilBean.setHash(null);
+					proFilBean.setPath(null);
+					proFilBean.setUuid(null);
+					proFilBean.setXmlFileName(null);
+					
+					logAsignaArchivos.log(Level.SEVERE, errorMsg, new Object());
+				}
+			}
+		} catch (Exception e) {
+			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
+			throw new ProcessFileCtrlExc("#"+e.toString(), e);
+		}
+    }
+
 }
