@@ -195,6 +195,7 @@ public class ProcessFileCtrl implements IProcessFile {
 		Folder folder = new Folder();
 		folder.setEntrada(tokens[0]+"\\Expedientes\\Entrada\\");
 		folder.setEncontrados(tokens[0]+"\\Expedientes\\Proceso\\001-Encontrados\\");
+		folder.setTemporal(tokens[0]+"\\Expedientes\\Proceso\\002-Temporal\\");
 		folder.setImagenTif(tokens[0]+"\\Expedientes\\Temporal\\Imagen\\Tif\\%BC(1)%\\");
 		folder.setImagenDifTif(tokens[0]+"\\Expedientes\\Error\\Imagen\\DifTif\\%BC(1)%\\");
 		folder.setImagenFallo(tokens[0]+"\\Expedientes\\Error\\Imagen\\Tif\\%BC(1)%\\");

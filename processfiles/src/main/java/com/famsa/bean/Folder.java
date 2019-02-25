@@ -14,6 +14,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @XmlType(name = "folder", propOrder = {
     "entrada",
     "encontrados",
+    "temporal",
     "imagenTif",
     "imagenDifTif",
     "imagenFallo",
@@ -26,6 +27,8 @@ public class Folder {
 	protected String entrada;
 	@XmlElement(required = true)
 	protected String encontrados;
+	@XmlElement(required = true)
+	protected String temporal;
 	@XmlElement(required = true)
 	protected String imagenTif;
 	@XmlElement(required = true)
@@ -50,6 +53,12 @@ public class Folder {
 	}
 	public void setEncontrados(String encontrados) {
 		this.encontrados = encontrados;
+	}
+	public String getTemporal() {
+		return temporal;
+	}
+	public void setTemporal(String temporal) {
+		this.temporal = temporal;
 	}
 	public String getImagenTif() {
 		return imagenTif;
@@ -81,11 +90,12 @@ public class Folder {
 	public void setPreautorizacion(String preautorizacion) {
 		this.preautorizacion = preautorizacion;
 	}
+	
 	@Override
 	public String toString() {
-		return "Folder [entrada=" + entrada + ", encontrados=" + encontrados + ", imagenTif=" + imagenTif
-				+ ", imagenDifTif=" + imagenDifTif + ", imagenFallo=" + imagenFallo + ", autorizacion=" + autorizacion
-				+ ", preautorizacion=" + preautorizacion + "]";
+		return "Folder [entrada=" + entrada + ", encontrados=" + encontrados + ", temporal=" + temporal + ", imagenTif="
+				+ imagenTif + ", imagenDifTif=" + imagenDifTif + ", imagenFallo=" + imagenFallo + ", autorizacion="
+				+ autorizacion + ", preautorizacion=" + preautorizacion + "]";
 	}
 	
 }
