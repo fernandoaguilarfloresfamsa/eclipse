@@ -18,7 +18,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.FileHandler;
@@ -30,7 +29,6 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import com.famsa.bean.Archivo;
 import com.famsa.bean.Archivos;
 import com.famsa.bean.Configuracion;
 import com.famsa.bean.ProcessFileBean;
@@ -41,13 +39,6 @@ import com.famsa.fabricas.BaseDatosFactory;
 import com.famsa.fabricas.ProcessFileFactory;
 import com.famsa.interfaces.IBaseDatosConexion;
 import com.famsa.interfaces.IProcessFile;
-import com.google.gson.Gson;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.json.JSONConfiguration;
 
 public class AsignaArchivos {
 
@@ -93,17 +84,20 @@ public class AsignaArchivos {
 		if(archivosParaProcesar!=null && !archivosParaProcesar.getListArchivo().isEmpty()) {
 
 			msg = String.format("Existen %d Archivo(s) para procesar: %s.", 
-					archivosParaProcesar.getListArchivo().size(),archivoXML);
+					archivosParaProcesar.getListArchivo().size(), archivoXML);
 			logAsignaArchivos.log(Level.INFO,msg);
 
 			for (int num=0;num<archivosParaProcesar.getListArchivo().size();num++) {
 				
 				ProcessFileBean resultado = null;
+				archivosParaProcesar.getListArchivo().get(num).setXmlArchivo(archivoXML);
 				try {
-					msg = String.format("Procesando el archivo %s", archivosParaProcesar.getListArchivo().get(num).getFilePath());
+					msg = String.format("Procesando el archivo %s", 
+							archivosParaProcesar.getListArchivo().get(num).getFilePath());
 					logAsignaArchivos.log(Level.INFO, msg);
 
-					resultado = consumeWebService(archivosParaProcesar.getListArchivo().get(num));
+					IProcessFile loadWS = ProcessFileFactory.loadWebServices();
+					resultado = loadWS.consumeWebService(archivosParaProcesar.getListArchivo().get(num));
 					
 					AsignaArchivos.mueveFile(resultado);
 						
@@ -127,6 +121,7 @@ public class AsignaArchivos {
 		
 		creaCarpeta(configuracion.getHilo().getPathLogErr());
 		creaCarpeta(configuracion.getFolder().getEncontrados());
+		creaCarpeta(configuracion.getFolder().getTemporal());
 
 		Date date = new Date();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS-");
@@ -191,34 +186,27 @@ public class AsignaArchivos {
     	return archivosPendientes;
     }
 
-    public static ProcessFileBean consumeWebService(Archivo archivo) throws AsignaArchivosExc {
+    public static void mueveFile(ProcessFileBean myResultado) throws AsignaArchivosExc {
     	
-    	String miUrl = String.format(
-    			"http://localhost:8080/processfiles/rest/processfiles/buscaArchivos/%s/%s/%s/%s", 
-    			archivo.getFilePath().replace('\\','/').replaceAll(" ", "%20"),
-    			archivo.getUuid(), 
-    			archivo.getCreationTime(), 
-    			archivoXML);
-    	try {
-	    	ClientConfig clientConfig = new DefaultClientConfig();
-	    	clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
-	    	Client client = Client.create(clientConfig);
-	
-	    	WebResource webResource = client.resource(miUrl);
-	
-	    	ClientResponse response = webResource.accept("application/json")
-	    	        .type("application/json").get(ClientResponse.class);    	
-	    	
-	    	if (response.hasEntity()) {
-	    		String output = response.getEntity(String.class);
-	    		Gson gson = new Gson();
-	    		return gson.fromJson(output, ProcessFileBean.class);
-	    	}
-    	} catch(Exception e) {
+		String dirDestino = 
+				configuracion.getFolder().getTemporal()+
+				archivoXML.substring(0, archivoXML.lastIndexOf('.'))+'\\'+
+				myResultado.getUuid()+'\\'+
+				myResultado.getFile();
+		
+		origenPath = FileSystems.getDefault().getPath(myResultado.getFilePath());
+		destinoPath = FileSystems.getDefault().getPath(dirDestino);
+		
+		File directorio = new File(dirDestino);
+		directorio.mkdirs();
+		
+		try {
+			Files.move(origenPath, destinoPath, StandardCopyOption.REPLACE_EXISTING);
+		} catch (IOException e) {
 			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
 			throw new AsignaArchivosExc(e.toString(), e);
-    	}
-		return null;
+		}
+    	
     }
     
     public static void guardaDatos(ProcessFileBean proFilBean) throws ProcessFileCtrlExc {
@@ -271,30 +259,4 @@ public class AsignaArchivos {
     	
     }
     
-    public static void mueveFile(ProcessFileBean myResultado) throws AsignaArchivosExc {
-    	
-		Date myDate = new Date();
-		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-		String fechaStr = dateFormat.format(myDate);
-		
-		String dirDestino = 
-				configuracion.getFolder().getTemporal()+
-				fechaStr+'\\'+
-				myResultado.getUuid()+'\\'+
-				myResultado.getFile();
-		
-		origenPath = FileSystems.getDefault().getPath(myResultado.getFilePath());
-		destinoPath = FileSystems.getDefault().getPath(dirDestino);
-		
-		File directorio = new File(dirDestino);
-		directorio.mkdirs();
-		
-		try {
-			Files.move(origenPath, destinoPath, StandardCopyOption.REPLACE_EXISTING);
-		} catch (IOException e) {
-			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
-			throw new AsignaArchivosExc(e.toString(), e);
-		}
-    	
-    }
 }

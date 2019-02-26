@@ -16,5 +16,8 @@ public class ProcessFileFactory {
 	public static IProcessFile createJson() {
 		return new ProcessFileCtrl();
 	}
-	
+
+	public static IProcessFile loadWebServices() {
+		return new ProcessFileCtrl();
+	}
 }

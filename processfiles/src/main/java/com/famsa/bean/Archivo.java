@@ -14,6 +14,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @XmlType(name = "archivo", propOrder = {
     "creationTime",
     "filePath",
+    "xmlArchivo",
     "uuid"
 })
 public class Archivo {
@@ -22,6 +23,7 @@ public class Archivo {
 	protected String creationTime;
 	@XmlElement(required = true)
 	protected String filePath;
+	protected String xmlArchivo;
 	@XmlElement(name = "uuid")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     @XmlSchemaType(name = "NMTOKEN")	
@@ -39,16 +41,22 @@ public class Archivo {
 	public void setFilePath(String filePath) {
 		this.filePath = filePath;
 	}
+	public String getXmlArchivo() {
+		return xmlArchivo;
+	}
+	public void setXmlArchivo(String xmlArchivo) {
+		this.xmlArchivo = xmlArchivo;
+	}
 	public String getUuid() {
 		return uuid;
 	}
 	public void setUuid(String uuid) {
 		this.uuid = uuid;
 	}
-	
 	@Override
 	public String toString() {
-		return "Archivo [creationTime=" + creationTime + ", filePath=" + filePath + ", uuid=" + uuid + "]";
+		return "Archivo [creationTime=" + creationTime + ", filePath=" + filePath + ", xmlArchivo=" + xmlArchivo
+				+ ", uuid=" + uuid + "]";
 	}
 	
 }

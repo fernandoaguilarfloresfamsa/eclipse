@@ -20,6 +20,7 @@ import javax.xml.bind.PropertyException;
 import javax.xml.bind.Unmarshaller;
 
 import com.famsa.aplicacion.AsignaArchivos;
+import com.famsa.bean.Archivo;
 import com.famsa.bean.Campo;
 import com.famsa.bean.Campos;
 import com.famsa.bean.ConexionBD;
@@ -32,6 +33,12 @@ import com.famsa.bean.Tabla;
 import com.famsa.exceptions.ProcessFileCtrlExc;
 import com.famsa.interfaces.IProcessFile;
 import com.google.gson.Gson;
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.config.ClientConfig;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.sun.jersey.api.json.JSONConfiguration;
 
 public class ProcessFileCtrl implements IProcessFile {
 
@@ -92,6 +99,7 @@ public class ProcessFileCtrl implements IProcessFile {
     	
     	creaCarpeta(configXML.getFolder().getEntrada());
     	creaCarpeta(configXML.getFolder().getEncontrados());
+    	creaCarpeta(configXML.getFolder().getTemporal());
 
 		return configXML;
 	}
@@ -325,5 +333,35 @@ public class ProcessFileCtrl implements IProcessFile {
         }
         return result.toString();
     }
+
+	@Override
+	public ProcessFileBean consumeWebService(Archivo archivo) throws ProcessFileCtrlExc {
+    	String miUrl = String.format(
+    			"http://localhost:8080/processfiles/rest/processfiles/buscaArchivos/%s/%s/%s/%s", 
+    			archivo.getFilePath().replace('\\','/').replaceAll(" ", "%20"),
+    			archivo.getUuid(), 
+    			archivo.getCreationTime(), 
+    			archivo.getXmlArchivo());
+    	try {
+	    	ClientConfig clientConfig = new DefaultClientConfig();
+	    	clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
+	    	Client client = Client.create(clientConfig);
 	
+	    	WebResource webResource = client.resource(miUrl);
+	
+	    	ClientResponse response = webResource.accept("application/json")
+	    	        .type("application/json").get(ClientResponse.class);    	
+	    	
+	    	if (response.hasEntity()) {
+	    		String output = response.getEntity(String.class);
+	    		Gson gson = new Gson();
+	    		return gson.fromJson(output, ProcessFileBean.class);
+	    	}
+    	} catch(Exception e) {
+    		logger.log(Level.SEVERE, e.toString(), e);
+			throw new ProcessFileCtrlExc(e.toString(), e);
+    	}
+		return null;
+	}
+
 }
