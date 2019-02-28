@@ -6,6 +6,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,6 +17,7 @@ import java.util.logging.SimpleFormatter;
 
 import com.famsa.bean.Configuracion;
 import com.famsa.bean.PbProcessFilesHalf;
+import com.famsa.controlador.Tarea;
 import com.famsa.exceptions.CreateThreadCtrlExc;
 import com.famsa.exceptions.CreateThreadExc;
 import com.famsa.exceptions.ProcessFileCtrlExc;
@@ -56,15 +61,9 @@ public class CreateThread {
 					throw new CreateThreadExc(e.toString(), e);
 				}
     		}
-    		
     	}
-    	
-    	for(int i=0;i<listPF.size();i++) {
-    		System.out.println("listPf:"+listPF.get(i));
-    	}
-    	
-    	
 
+    	CreateThread.proceso();
 	}
 
 	private static void inicio() throws CreateThreadExc {
@@ -113,4 +112,31 @@ public class CreateThread {
 		}		
 	}
 	
+	private static void proceso() throws CreateThreadExc {
+		
+		List<Future<String>> list = new ArrayList<>();
+		
+		ExecutorService executor = Executors.newFixedThreadPool(listPF.size());
+		for(int i=0;i<listPF.size();i++) {
+			Future<String> future = executor.submit(new Tarea(listPF.get(i)));
+			list.add(future);
+		}
+		
+		for(Future<String> fut : list){
+			try {
+				String msg = String.format("%s",fut.get());
+				logCreateThread.info(msg);
+			} catch (InterruptedException e) {
+				logCreateThread.log(Level.WARNING, e.toString(), e);
+				Thread.currentThread().interrupt();
+			} catch (ExecutionException e) {
+				logCreateThread.log(Level.SEVERE, e.toString(), e);
+				throw new CreateThreadExc(e.toString(), e);
+			}
+        }
+		
+		executor.shutdown();
+		logCreateThread.info("executor.shutdown()");
+		
+	}
 }

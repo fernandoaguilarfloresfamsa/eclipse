@@ -41,6 +41,8 @@ public class CreateThreadCtrl implements ICreateThread {
 	String[] tokens;
 	List<PbProcessFilesHalf> resIds = new ArrayList<>();
 	
+	private static final String APP_JSON = "application/json";  
+	
 	@Override
 	public Configuracion findConfiguration() throws CreateThreadCtrlExc {
 		Configuracion configXML = new Configuracion();
@@ -111,12 +113,7 @@ public class CreateThreadCtrl implements ICreateThread {
 		
 		IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
 		try (Connection conn = baseDatosConexion.getConnection()) {
-			String sql = 
-					"SELECT TOP 2 A.ID "+
-					"FROM dbo.PB_PROCESS_FILES_HALF A "+
-					"JOIN dbo.PB_PROCESS_FILES_HEAD B ON A.ID_FILE_HEAD=B.ID "+
-					"WHERE A.ESTATUS='PENDIENTE' "+
-					"ORDER BY A.ID";
+			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE_DATOS_IDS] }";
 			try (CallableStatement cstmt = conn.prepareCall(sql)) {
 				try (ResultSet resultSet = cstmt.executeQuery()) {
 					while(resultSet.next()) {
@@ -151,16 +148,7 @@ public class CreateThreadCtrl implements ICreateThread {
 		PbProcessFilesHalf resDetalle = new PbProcessFilesHalf();
 		IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
 		try (Connection conn = baseDatosConexion.getConnection()) {
-			String sql = 
-					"SELECT A.ID,"+
-							"B.XML_FILE_NAME,"+
-							"A.UUID,"+
-							"A.IMAGE_FILE_NAME "+
-					"FROM dbo.PB_PROCESS_FILES_HALF A "+
-					"JOIN dbo.PB_PROCESS_FILES_HEAD B ON A.ID_FILE_HEAD=B.ID "+
-					"WHERE A.ID= ? "+
-					  "AND A.ESTATUS='PENDIENTE' "+
-					"ORDER BY A.ID";
+			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE_DATOS_DETALLE] ( ? ) }";
 			try (CallableStatement cstmt = conn.prepareCall(sql)) {
 				cstmt.setInt(1, paramId);
 				try (ResultSet resultSet = cstmt.executeQuery()) {
@@ -190,8 +178,8 @@ public class CreateThreadCtrl implements ICreateThread {
 	
 	    	WebResource webResource = client.resource(miUrl);
 	
-	    	ClientResponse response = webResource.accept("application/json")
-	    	        .type("application/json").get(ClientResponse.class);    	
+	    	ClientResponse response = webResource.accept(APP_JSON)
+	    	        .type(APP_JSON).get(ClientResponse.class);    	
 	    	
 	    	if (response.hasEntity()) {
 	    		String output = response.getEntity(String.class);
@@ -204,5 +192,64 @@ public class CreateThreadCtrl implements ICreateThread {
     	}
 		return null;
 	}
+
+	@Override
+	public String generaJsonEnProceso(int paramIdEnProceso) throws CreateThreadCtrlExc {
+		PbProcessFilesHalf enProceso = new PbProcessFilesHalf();
+		try {
+			enProceso = obtenerDatosEnProceso(paramIdEnProceso);
+		} catch (CreateThreadCtrlExc e) {
+			logger.log(Level.SEVERE, e.toString(), e);
+			throw new CreateThreadCtrlExc("#"+e.toString(), e);
+		}
+		Gson gson = new Gson();
+		return gson.toJson(enProceso);
+	}
+
+	public PbProcessFilesHalf obtenerDatosEnProceso(int paramIdEnProceso) throws CreateThreadCtrlExc {
+		PbProcessFilesHalf resEnProceso = new PbProcessFilesHalf();
+		IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
+		try (Connection conn = baseDatosConexion.getConnection()) {
+			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE_DATOS_IDS_EP] ( ? ) }";
+			try (CallableStatement cstmt = conn.prepareCall(sql)) {
+				cstmt.setInt(1, paramIdEnProceso);
+				try (ResultSet resultSet = cstmt.executeQuery()) {
+					while(resultSet.next()) {
+						resEnProceso.setId(resultSet.getInt("ID"));
+					}
+				}
+			}
+		} catch (Exception e) {
+			logger.log(Level.SEVERE, e.toString(), e);
+			throw new CreateThreadCtrlExc("#"+e.toString(), e);
+		}
+		return resEnProceso;
+	}
 	
+	@Override
+	public PbProcessFilesHalf consumeWebServiceEnProceso(int idEnProceso) throws CreateThreadCtrlExc {
+		String miUrl = String.format(
+				"http://localhost:8080/processfiles/rest/createthread/buscaDetalle/%d", idEnProceso);
+    	try {
+	    	ClientConfig clientConfig = new DefaultClientConfig();
+	    	clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
+	    	Client client = Client.create(clientConfig);
+	
+	    	WebResource webResource = client.resource(miUrl);
+	
+	    	ClientResponse response = webResource.accept(APP_JSON)
+	    	        .type(APP_JSON).get(ClientResponse.class);    	
+	    	
+	    	if (response.hasEntity()) {
+	    		String output = response.getEntity(String.class);
+	    		Gson gson = new Gson();
+	    		return gson.fromJson(output, PbProcessFilesHalf.class);
+	    	}
+    	} catch(Exception e) {
+    		logger.log(Level.SEVERE, e.toString(), e);
+			throw new CreateThreadCtrlExc(e.toString(), e);
+    	}
+		return null;
+	}
+
 }

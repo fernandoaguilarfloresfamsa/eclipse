@@ -1,11 +1,16 @@
 package com.famsa.bean;
 
+import java.util.Date;
+
 public class PbProcessFilesHalf {
 
 	private int id;
 	private String xmlFileName;
 	private String uuid;
 	private String imageFileName;
+	private String threadName;
+	private int numeroPaginas;
+	private Date fhTermino;
 	
 	public int getId() {
 		return id;
@@ -31,10 +36,29 @@ public class PbProcessFilesHalf {
 	public void setImageFileName(String imageFileName) {
 		this.imageFileName = imageFileName;
 	}
+	public String getThreadName() {
+		return threadName;
+	}
+	public void setThreadName(String threadName) {
+		this.threadName = threadName;
+	}
+	public int getNumeroPaginas() {
+		return numeroPaginas;
+	}
+	public void setNumeroPaginas(int numeroPaginas) {
+		this.numeroPaginas = numeroPaginas;
+	}
+	public Date getFhTermino() {
+		return fhTermino;
+	}
+	public void setFhTermino(Date fhTermino) {
+		this.fhTermino = fhTermino;
+	}
 	@Override
 	public String toString() {
 		return "PbProcessFilesHalf [id=" + id + ", xmlFileName=" + xmlFileName + ", uuid=" + uuid + ", imageFileName="
-				+ imageFileName + "]";
+				+ imageFileName + ", threadName=" + threadName + ", numeroPaginas=" + numeroPaginas + ", fhTermino="
+				+ fhTermino + "]";
 	}
 	
 }

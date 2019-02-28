@@ -13,10 +13,6 @@ public class ProcessFileBean {
 	private int errorInt;
 	private String errorMsg;
 	
-	public ProcessFileBean() {
-		super();
-	}
-
 	public String getXmlFileName() {
 		return xmlFileName;
 	}
@@ -77,7 +73,6 @@ public class ProcessFileBean {
 	public void setErrorMsg(String errorMsg) {
 		this.errorMsg = errorMsg;
 	}
-
 	@Override
 	public String toString() {
 		return "ProcessFileBean [xmlFileName=" + xmlFileName + ", creationTime=" + creationTime + ", filePath="
