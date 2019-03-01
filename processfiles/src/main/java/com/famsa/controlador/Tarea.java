@@ -40,11 +40,14 @@ public class Tarea implements Callable<String> {
 
 	@Override
 	public String call() throws Exception {
+
+		String nombreTarea = Thread.currentThread().getName();
 		
+		getPfHalf().setThreadName(nombreTarea);
 		Tarea.proceso(getPfHalf());
 		
 		String indice = String.valueOf(getPfHalf().getId());
-		return Thread.currentThread().getName()+";"+indice;
+		return nombreTarea+";"+indice;
 	}
 	
 	private static void proceso(PbProcessFilesHalf pfH) throws TareaExc {
@@ -68,6 +71,9 @@ public class Tarea implements Callable<String> {
 		}
 		msg = String.format("Numero de paginas:%d", numPag);
 		logTarea.log(Level.INFO, msg);
+		
+		pfH.setNumeroPaginas(numPag);
+		
 	}
 	
 	private static void obtenerConfiguracion() throws TareaExc {
@@ -107,4 +113,5 @@ public class Tarea implements Callable<String> {
 		}
 		return numPages;
 	}
+	
 }

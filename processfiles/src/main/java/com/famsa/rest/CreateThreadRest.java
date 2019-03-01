@@ -57,25 +57,4 @@ public class CreateThreadRest {
 		
 	}
 
-	@GET
-	@Path("/enProceso/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-	public Response getEnProceso(
-			@DefaultValue("id") @PathParam("id") int paramId) {
-		
-		String strJSON;
-		ICreateThread creThread = CreateThreadFactory.createJsonEnProceso();
-		try {
-			strJSON = creThread.generaJsonEnProceso(
-					paramId);
-		} catch (CreateThreadCtrlExc e) {
-			String resultado = String.format(MYRESULTADOEXC, 7002, 
-					e.toString().substring((e.toString().indexOf('#') + 1), (e.toString().length())));
-			return Response.status(200).entity(resultado).build();
-		}
-		
-		return Response.status(200).entity(strJSON).build();
-		
-	}
-	
 }

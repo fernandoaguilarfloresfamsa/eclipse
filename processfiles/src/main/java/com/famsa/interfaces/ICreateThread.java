@@ -19,10 +19,4 @@ public interface ICreateThread {
 	public String generaJsonDetalle(int paramId) throws CreateThreadCtrlExc;
 	public PbProcessFilesHalf consumeWebServiceDetalle(int id) throws CreateThreadCtrlExc;
 	
-	/*
-	 * cambia el estatus de "pendiente" a "en proceso"
-	 */
-	public String generaJsonEnProceso(int paramId) throws CreateThreadCtrlExc;
-	public PbProcessFilesHalf consumeWebServiceEnProceso(int id) throws CreateThreadCtrlExc;
-	
 }
