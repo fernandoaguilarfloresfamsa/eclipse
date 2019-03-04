@@ -11,6 +11,8 @@ public class PbProcessFilesHalf {
 	private String threadName;
 	private int numeroPaginas;
 	private Date fhTermino;
+	private int errorInt;
+	private String errorMsg;
 	
 	public int getId() {
 		return id;
@@ -54,11 +56,23 @@ public class PbProcessFilesHalf {
 	public void setFhTermino(Date fhTermino) {
 		this.fhTermino = fhTermino;
 	}
+	public int getErrorInt() {
+		return errorInt;
+	}
+	public void setErrorInt(int errorInt) {
+		this.errorInt = errorInt;
+	}
+	public String getErrorMsg() {
+		return errorMsg;
+	}
+	public void setErrorMsg(String errorMsg) {
+		this.errorMsg = errorMsg;
+	}
 	@Override
 	public String toString() {
 		return "PbProcessFilesHalf [id=" + id + ", xmlFileName=" + xmlFileName + ", uuid=" + uuid + ", imageFileName="
 				+ imageFileName + ", threadName=" + threadName + ", numeroPaginas=" + numeroPaginas + ", fhTermino="
-				+ fhTermino + "]";
+				+ fhTermino + ", errorInt=" + errorInt + ", errorMsg=" + errorMsg + "]";
 	}
 	
 }

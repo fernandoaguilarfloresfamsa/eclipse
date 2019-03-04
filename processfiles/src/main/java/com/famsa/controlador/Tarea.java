@@ -9,9 +9,12 @@ import java.util.logging.Logger;
 import com.famsa.aplicacion.CreateThread;
 import com.famsa.bean.Configuracion;
 import com.famsa.bean.PbProcessFilesHalf;
+import com.famsa.exceptions.CreateThreadCtrlExc;
 import com.famsa.exceptions.ProcessFileCtrlExc;
 import com.famsa.exceptions.TareaExc;
+import com.famsa.fabricas.CreateThreadFactory;
 import com.famsa.fabricas.ProcessFileFactory;
+import com.famsa.interfaces.ICreateThread;
 import com.famsa.interfaces.IProcessFile;
 import com.sun.media.jai.codec.FileSeekableStream;
 import com.sun.media.jai.codec.ImageCodec;
@@ -54,7 +57,6 @@ public class Tarea implements Callable<String> {
 		try {
 			obtenerConfiguracion();
 		} catch (TareaExc e1) {
-			logTarea.log(Level.SEVERE, e1.toString(), e1);
 			throw new TareaExc(e1.toString(), e1);
 		}
 		
@@ -66,7 +68,6 @@ public class Tarea implements Callable<String> {
 					pfH.getUuid()+"\\"+
 					pfH.getImageFileName());
 		} catch (TareaExc e) {
-			logTarea.log(Level.SEVERE, e.toString(), e);
 			throw new TareaExc(e.toString(), e);
 		}
 		msg = String.format("Numero de paginas:%d", numPag);
@@ -74,6 +75,12 @@ public class Tarea implements Callable<String> {
 		
 		pfH.setNumeroPaginas(numPag);
 		
+		ICreateThread ict = CreateThreadFactory.loadWebServicesEnProceso();
+		try {
+			ict.consumeWebServiceEnProceso(pfH.getId(),pfH.getThreadName(),pfH.getNumeroPaginas());
+		} catch (CreateThreadCtrlExc e) {
+			throw new TareaExc(e.toString(), e);
+		}
 	}
 	
 	private static void obtenerConfiguracion() throws TareaExc {
@@ -81,7 +88,6 @@ public class Tarea implements Callable<String> {
 		try {
 			configuracion = config.findConfiguration();
 		} catch (ProcessFileCtrlExc e) {
-			logTarea.log(Level.SEVERE, e.toString(), e);
 			throw new TareaExc(e.toString(), e);
 		}
 	}
@@ -93,7 +99,6 @@ public class Tarea implements Callable<String> {
 		try {
 			ss = new FileSeekableStream(file);
 		} catch (IOException e) {
-			logTarea.log(Level.SEVERE, e.toString(), e);
 			throw new TareaExc(e.toString(), e);
 		}
 		TIFFDecodeParam decodeParam = new TIFFDecodeParam();
@@ -102,16 +107,15 @@ public class Tarea implements Callable<String> {
 		try {
 			numPages = decoder.getNumPages();
 		} catch (IOException e) {
-			logTarea.log(Level.SEVERE, e.toString(), e);
 			throw new TareaExc(e.toString(), e);
 		}
 		try {
 			ss.close();
 		} catch (IOException e) {
-			logTarea.log(Level.SEVERE, e.toString(), e);
 			throw new TareaExc(e.toString(), e);
 		}
 		return numPages;
 	}
+	
 	
 }

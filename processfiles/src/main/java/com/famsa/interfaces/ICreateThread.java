@@ -7,16 +7,10 @@ import com.famsa.exceptions.CreateThreadCtrlExc;
 public interface ICreateThread {
 
 	public Configuracion findConfiguration() throws CreateThreadCtrlExc;
-	
-	/*
-	 * regresa maximo dos indices "pendientes"
-	 */
 	public String generaJsonIds() throws CreateThreadCtrlExc;
-	
-	/*
-	 * regresa el detalle de los registros "pendientes"
-	 */
 	public String generaJsonDetalle(int paramId) throws CreateThreadCtrlExc;
 	public PbProcessFilesHalf consumeWebServiceDetalle(int id) throws CreateThreadCtrlExc;
+	public String generaJsonEnProceso(int id, String threadName, int numeroPaginas) throws CreateThreadCtrlExc;
+	public PbProcessFilesHalf consumeWebServiceEnProceso(int id, String threadName, int numeroPaginas) throws CreateThreadCtrlExc;
 	
 }

@@ -73,11 +73,9 @@ public class BuscaArchivos {
 			try {
 				BuscaArchivos.findFiles();
 			} catch (BuscaArchivosExc e) {
-				logBuscaArchivos.log(Level.SEVERE, e.toString(), e);
 				throw new BuscaArchivosExc(e.toString(), e);
 			}
         } else {
-        	logBuscaArchivos.log(Level.SEVERE,"FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
         	throw new BuscaArchivosExc("FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
         }
 	}
@@ -116,7 +114,6 @@ public class BuscaArchivos {
 		try {
 			configuracion = config.findConfiguration();
 		} catch (ProcessFileCtrlExc e) {
-			logBuscaArchivos.log(Level.SEVERE, e.toString(), e);
 			throw new BuscaArchivosExc(e.toString(), e);
 		}
 	}
@@ -141,7 +138,6 @@ public class BuscaArchivos {
 				try {
 					attributes = Files.readAttributes(filePath, BasicFileAttributes.class);
 				} catch (IOException e) {
-					logBuscaArchivos.log(Level.SEVERE, e.toString(), e);
 					throw new BuscaArchivosExc(e.toString(), e);
 				}
             	fileTime = attributes.creationTime();
@@ -154,7 +150,6 @@ public class BuscaArchivos {
 	        try {
 				marshalListToXMLFile(treeMap);
 			} catch (BuscaArchivosExc e) {
-				logBuscaArchivos.log(Level.SEVERE, e.toString(), e);
 				throw new BuscaArchivosExc(e.toString(), e);
 			}
         } else {
@@ -199,26 +194,22 @@ public class BuscaArchivos {
 			try {
 				jaxbContext = JAXBContext.newInstance(Archivos.class);
 			} catch (JAXBException e3) {
-				logBuscaArchivos.log(Level.SEVERE, e3.toString(), e3);
 				throw new BuscaArchivosExc(e3.toString(), e3);
 			}
 			Marshaller jaxbMarshaller = null;
 			try {
 				jaxbMarshaller = jaxbContext.createMarshaller();
 			} catch (JAXBException e2) {
-				logBuscaArchivos.log(Level.SEVERE, e2.toString(), e2);
 				throw new BuscaArchivosExc(e2.toString(), e2);
 			}
 			try {
 				jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 			} catch (PropertyException e1) {
-				logBuscaArchivos.log(Level.SEVERE, e1.toString(), e1);
 				throw new BuscaArchivosExc(e1.toString(), e1);
 			}
 			try {
 				jaxbMarshaller.marshal(archivosEnCarpeta, file);
 			} catch (JAXBException e) {
-				logBuscaArchivos.log(Level.SEVERE, e.toString(), e);
 				throw new BuscaArchivosExc(e.toString(), e);
 			}
     	} else {

@@ -25,4 +25,12 @@ public class CreateThreadFactory {
 		return new CreateThreadCtrl();
 	}
 
+	public static ICreateThread createJsonEnProceso() {
+		return new CreateThreadCtrl();
+	}
+	
+	public static ICreateThread loadWebServicesEnProceso() {
+		return new CreateThreadCtrl();
+	}
+
 }

@@ -76,7 +76,6 @@ public class AsignaArchivos {
 			try {
 				archivosParaProcesar = AsignaArchivos.unmarshalXMLToList();
 			} catch (AsignaArchivosExc e) {
-				logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
 				throw new AsignaArchivosExc(e.toString(), e);
 			}
 		}
@@ -104,7 +103,6 @@ public class AsignaArchivos {
 					 AsignaArchivos.guardaDatos(resultado);
 							
 				} catch (ProcessFileCtrlExc e) {
-					logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
 					throw new AsignaArchivosExc(e.toString(), e);
 				}
 			}
@@ -145,7 +143,6 @@ public class AsignaArchivos {
 		try {
 			configuracion = config.findConfiguration();
 		} catch (ProcessFileCtrlExc e) {
-			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
 			throw new AsignaArchivosExc(e.toString(), e);
 		}
 	}
@@ -166,20 +163,17 @@ public class AsignaArchivos {
     		try {
     			jaxbContext = JAXBContext.newInstance(Archivos.class);
     		} catch (JAXBException e) {
-    			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
     			throw new AsignaArchivosExc(e.toString(), e);
     		}
             Unmarshaller jaxbUnmarshaller;
     		try {
     			jaxbUnmarshaller = jaxbContext.createUnmarshaller();
     		} catch (JAXBException e) {
-    			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
     			throw new AsignaArchivosExc(e.toString(), e);
     		}
             try {
     			archivosPendientes = (Archivos) jaxbUnmarshaller.unmarshal( new File(configuracion.getFolder().getEncontrados()+archivoXML));
     		} catch (JAXBException e) {
-    			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
     			throw new AsignaArchivosExc(e.toString(), e);
     		}
     	}
@@ -203,7 +197,6 @@ public class AsignaArchivos {
 		try {
 			Files.move(origenPath, destinoPath, StandardCopyOption.REPLACE_EXISTING);
 		} catch (IOException e) {
-			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
 			throw new AsignaArchivosExc(e.toString(), e);
 		}
     	
@@ -253,7 +246,6 @@ public class AsignaArchivos {
 				}
 			}
 		} catch (Exception e) {
-			logAsignaArchivos.log(Level.SEVERE, e.toString(), e);
 			throw new ProcessFileCtrlExc("#"+e.toString(), e);
 		}
     	

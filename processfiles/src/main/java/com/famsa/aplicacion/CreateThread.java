@@ -57,7 +57,6 @@ public class CreateThread {
 	        		PbProcessFilesHalf resultado = loadWS.consumeWebServiceDetalle(id);
 	        		listPF.add(resultado);
 				} catch (CreateThreadCtrlExc e) {
-					logCreateThread.log(Level.SEVERE, e.toString(), e);
 					throw new CreateThreadExc(e.toString(), e);
 				}
     		}
@@ -100,7 +99,6 @@ public class CreateThread {
 		try {
 			configuracion = config.findConfiguration();
 		} catch (ProcessFileCtrlExc e) {
-			logCreateThread.log(Level.SEVERE, e.toString(), e);
 			throw new CreateThreadExc(e.toString(), e);
 		}
 	}
@@ -130,7 +128,6 @@ public class CreateThread {
 				logCreateThread.log(Level.WARNING, e.toString(), e);
 				Thread.currentThread().interrupt();
 			} catch (ExecutionException e) {
-				logCreateThread.log(Level.SEVERE, e.toString(), e);
 				throw new CreateThreadExc(e.toString(), e);
 			}
         }

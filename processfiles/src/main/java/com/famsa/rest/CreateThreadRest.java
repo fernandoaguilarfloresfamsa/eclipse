@@ -57,4 +57,27 @@ public class CreateThreadRest {
 		
 	}
 
+	@GET
+	@Path("/enProceso/{id}/{threadName}/{numeroPaginas}")
+    @Produces(MediaType.APPLICATION_JSON)
+	public Response setEnProceso(
+			@DefaultValue("id") @PathParam("id") int paramId,
+			@DefaultValue("threadName") @PathParam("threadName") String paramThreadName,
+			@DefaultValue("numeroPaginas") @PathParam("numeroPaginas") int paramNumeroPaginas) {
+		
+		String strJSON;
+		ICreateThread creThread = CreateThreadFactory.createJsonEnProceso();
+		try {
+			strJSON = creThread.generaJsonEnProceso(paramId, paramThreadName, paramNumeroPaginas);
+		} catch (CreateThreadCtrlExc e) {
+			String resultado = String.format(MYRESULTADOEXC, 7001, 
+					e.toString().substring((e.toString().indexOf('#') + 1), (e.toString().length())));
+			return Response.status(200).entity(resultado).build();
+		}
+		
+		return Response.status(200).entity(strJSON).build();
+		
+	}
+
+
 }

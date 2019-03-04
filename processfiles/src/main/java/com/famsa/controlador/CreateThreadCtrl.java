@@ -6,7 +6,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.bind.JAXBContext;
@@ -102,7 +101,6 @@ public class CreateThreadCtrl implements ICreateThread {
 		try {
 			obtenerDatosIds();
 		} catch (CreateThreadCtrlExc e) {
-			logger.log(Level.SEVERE, e.toString(), e);
 			throw new CreateThreadCtrlExc("#"+e.toString(), e);
 		}
 		Gson gson = new Gson();
@@ -125,7 +123,6 @@ public class CreateThreadCtrl implements ICreateThread {
 				}
 			}
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.toString(), e);
 			throw new CreateThreadCtrlExc("#"+e.toString(), e);
 		}
 	}
@@ -136,7 +133,6 @@ public class CreateThreadCtrl implements ICreateThread {
 		try {
 			detalle = obtenerDatosDetalle(paramId);
 		} catch (CreateThreadCtrlExc e) {
-			logger.log(Level.SEVERE, e.toString(), e);
 			throw new CreateThreadCtrlExc("#"+e.toString(), e);
 		}
 		Gson gson = new Gson();
@@ -161,7 +157,6 @@ public class CreateThreadCtrl implements ICreateThread {
 				}
 			}
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, e.toString(), e);
 			throw new CreateThreadCtrlExc("#"+e.toString(), e);
 		}
 		return resDetalle;
@@ -187,10 +182,79 @@ public class CreateThreadCtrl implements ICreateThread {
 	    		return gson.fromJson(output, PbProcessFilesHalf.class);
 	    	}
     	} catch(Exception e) {
-    		logger.log(Level.SEVERE, e.toString(), e);
 			throw new CreateThreadCtrlExc(e.toString(), e);
     	}
 		return null;
 	}
 
+	@Override
+	public String generaJsonEnProceso(int id, String threadName, int numeroPaginas) throws CreateThreadCtrlExc {
+		PbProcessFilesHalf detalle = new PbProcessFilesHalf();
+		try {
+			detalle = obtenerDatosDetalle(id);
+			detalle.setThreadName(threadName);
+			detalle.setNumeroPaginas(numeroPaginas);
+		} catch (CreateThreadCtrlExc e) {
+			throw new CreateThreadCtrlExc("#"+e.toString(), e);
+		}
+		
+		try {
+			actualizaEnProceso(id,threadName,numeroPaginas);
+		} catch (CreateThreadCtrlExc e) {
+			throw new CreateThreadCtrlExc("#"+e.toString(), e);
+		}
+		
+		Gson gson = new Gson();
+		return gson.toJson(detalle);
+	}
+
+	private static void actualizaEnProceso(int id, String threadName, int numeroPaginas) throws CreateThreadCtrlExc {
+    	
+    	IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
+    	try (Connection conn = baseDatosConexion.getConnection()) {
+			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE_EN_PROCESO] ( ? , ? , ? , ? , ? ) }";
+			
+			try (CallableStatement cstmt = conn.prepareCall(sql)) {
+				cstmt.setInt(1, id);
+				cstmt.setString(2, threadName);
+				cstmt.setInt(3, numeroPaginas);
+				
+				cstmt.registerOutParameter(4, java.sql.Types.INTEGER);
+				cstmt.registerOutParameter(5, java.sql.Types.VARCHAR);
+			
+				cstmt.executeUpdate();
+			}
+		} catch (Exception e) {
+			throw new CreateThreadCtrlExc("#"+e.toString(), e);
+		}
+	}
+
+	@Override
+	public PbProcessFilesHalf consumeWebServiceEnProceso(int id, String threadName, int numeroPaginas) throws CreateThreadCtrlExc {
+		String miUrl = String.format(
+				"http://localhost:8080/processfiles/rest/createthread/enProceso/%d/%s/%d", 
+				id,threadName,numeroPaginas);
+    	try {
+	    	ClientConfig clientConfig = new DefaultClientConfig();
+	    	clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
+	    	Client client = Client.create(clientConfig);
+	
+	    	WebResource webResource = client.resource(miUrl);
+	
+	    	ClientResponse response = webResource.accept(APP_JSON)
+	    	        .type(APP_JSON).get(ClientResponse.class);    	
+	    	
+	    	if (response.hasEntity()) {
+	    		
+	    		String output = response.getEntity(String.class);
+	    		Gson gson = new Gson();
+	    		return gson.fromJson(output, PbProcessFilesHalf.class);
+	    	}
+    	} catch(Exception e) {
+			throw new CreateThreadCtrlExc(e.toString(), e);
+    	}
+		return null;
+	}
+	
+	
 }

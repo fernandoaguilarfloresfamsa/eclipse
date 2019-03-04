@@ -75,6 +75,11 @@ public class SQLServerConnection implements IBaseDatosConexion {
 			} catch (SQLServerConnectionExc e1) {
 				throw new SQLServerConnectionExc(e1.toString(), e1);
 			}
+	        try {
+	            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+	        } catch (ClassNotFoundException e) {
+	        	throw new SQLServerConnectionExc(e.toString(), e);
+	        }			
 			String urlConeccion = String.format("jdbc:sqlserver://%s:%s;instanceName=%s;databaseName=%s", 
 					servidorSQLServer, puertoSQLServer, instanciaSQLServer, schemaSQLServer);
 			try {
