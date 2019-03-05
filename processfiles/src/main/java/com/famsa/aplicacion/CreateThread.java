@@ -15,16 +15,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
+import com.famsa.bean.Archivo;
 import com.famsa.bean.Configuracion;
-import com.famsa.bean.PbProcessFilesHalf;
+import com.famsa.controlador.ProcessFileCtrl;
 import com.famsa.controlador.Tarea;
-import com.famsa.exceptions.CreateThreadCtrlExc;
 import com.famsa.exceptions.CreateThreadExc;
 import com.famsa.exceptions.ProcessFileCtrlExc;
-import com.famsa.fabricas.CreateThreadFactory;
-import com.famsa.fabricas.ProcessFileFactory;
-import com.famsa.interfaces.ICreateThread;
-import com.famsa.interfaces.IProcessFile;
 
 public class CreateThread {
 
@@ -33,7 +29,7 @@ public class CreateThread {
 	static Configuracion configuracion = null;
 	static String archivoXML;
 	static String msg = null;
-	static List<PbProcessFilesHalf> listPF = new ArrayList<>();
+	static List<Archivo> listPF = new ArrayList<>();
 
 	public static void main(String[] args) throws CreateThreadExc {
 		try {
@@ -47,20 +43,6 @@ public class CreateThread {
         	throw new CreateThreadExc("FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
     	}
     	
-    	for(int i=0;i<args.length;i++) {
-    		
-    		if ( !args[i].equals("-1")) {
-	    		int id = Integer.parseInt(args[i]);
-	
-	        	ICreateThread loadWS = CreateThreadFactory.loadWebServicesDetalle();
-	        	try {
-	        		PbProcessFilesHalf resultado = loadWS.consumeWebServiceDetalle(id);
-	        		listPF.add(resultado);
-				} catch (CreateThreadCtrlExc e) {
-					throw new CreateThreadExc(e.toString(), e);
-				}
-    		}
-    	}
 
     	CreateThread.proceso();
 	}
@@ -95,9 +77,9 @@ public class CreateThread {
 	}
 	
 	private static void obtenerConfiguracion() throws CreateThreadExc {
-		IProcessFile config = ProcessFileFactory.buscaConfiguracion();
+		ProcessFileCtrl cfg = new ProcessFileCtrl();
 		try {
-			configuracion = config.findConfiguration();
+			configuracion = cfg.findConfiguration();
 		} catch (ProcessFileCtrlExc e) {
 			throw new CreateThreadExc(e.toString(), e);
 		}

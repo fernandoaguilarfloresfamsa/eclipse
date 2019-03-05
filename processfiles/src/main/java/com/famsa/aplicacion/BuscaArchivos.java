@@ -41,10 +41,9 @@ import javax.xml.bind.PropertyException;
 import com.famsa.bean.Archivo;
 import com.famsa.bean.Archivos;
 import com.famsa.bean.Configuracion;
+import com.famsa.controlador.ProcessFileCtrl;
 import com.famsa.exceptions.BuscaArchivosExc;
 import com.famsa.exceptions.ProcessFileCtrlExc;
-import com.famsa.fabricas.ProcessFileFactory;
-import com.famsa.interfaces.IProcessFile;
 
 public class BuscaArchivos {
 	
@@ -110,9 +109,9 @@ public class BuscaArchivos {
 	}
 
 	private static void obtenerConfiguracion() throws BuscaArchivosExc {
-		IProcessFile config = ProcessFileFactory.buscaConfiguracion();
+		ProcessFileCtrl cfg = new ProcessFileCtrl();
 		try {
-			configuracion = config.findConfiguration();
+			configuracion = cfg.findConfiguration();
 		} catch (ProcessFileCtrlExc e) {
 			throw new BuscaArchivosExc(e.toString(), e);
 		}

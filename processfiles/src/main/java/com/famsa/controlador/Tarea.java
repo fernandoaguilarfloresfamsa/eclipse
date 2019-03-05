@@ -7,15 +7,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.famsa.aplicacion.CreateThread;
+import com.famsa.bean.Archivo;
 import com.famsa.bean.Configuracion;
-import com.famsa.bean.PbProcessFilesHalf;
-import com.famsa.exceptions.CreateThreadCtrlExc;
 import com.famsa.exceptions.ProcessFileCtrlExc;
 import com.famsa.exceptions.TareaExc;
-import com.famsa.fabricas.CreateThreadFactory;
-import com.famsa.fabricas.ProcessFileFactory;
-import com.famsa.interfaces.ICreateThread;
-import com.famsa.interfaces.IProcessFile;
 import com.sun.media.jai.codec.FileSeekableStream;
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.ImageDecoder;
@@ -28,16 +23,16 @@ public class Tarea implements Callable<String> {
 	static Configuracion configuracion = null;
 	static String msg = null;
 	
-	private PbProcessFilesHalf pfHalf;
+	private Archivo pfHalf;
 
-	public Tarea(PbProcessFilesHalf pfHalf) {
+	public Tarea(Archivo pfHalf) {
 		super();
 		this.pfHalf = pfHalf;
 	}
-	public PbProcessFilesHalf getPfHalf() {
+	public Archivo getPfHalf() {
 		return pfHalf;
 	}
-	public void setPfHalf(PbProcessFilesHalf pfHalf) {
+	public void setPfHalf(Archivo pfHalf) {
 		this.pfHalf = pfHalf;
 	}
 
@@ -53,7 +48,7 @@ public class Tarea implements Callable<String> {
 		return nombreTarea+";"+indice;
 	}
 	
-	private static void proceso(PbProcessFilesHalf pfH) throws TareaExc {
+	private static void proceso(Archivo pfH) throws TareaExc {
 		try {
 			obtenerConfiguracion();
 		} catch (TareaExc e1) {
@@ -64,7 +59,7 @@ public class Tarea implements Callable<String> {
 		try {
 			numPag = obtenerNumeroDePaginas(
 					configuracion.getFolder().getTemporal()+
-					pfH.getXmlFileName().substring(0, pfH.getXmlFileName().lastIndexOf('.'))+"\\"+
+					pfH.getXmlArchivo().substring(0, pfH.getXmlArchivo().lastIndexOf('.'))+"\\"+
 					pfH.getUuid()+"\\"+
 					pfH.getImageFileName());
 		} catch (TareaExc e) {
@@ -75,18 +70,12 @@ public class Tarea implements Callable<String> {
 		
 		pfH.setNumeroPaginas(numPag);
 		
-		ICreateThread ict = CreateThreadFactory.loadWebServicesEnProceso();
-		try {
-			ict.consumeWebServiceEnProceso(pfH.getId(),pfH.getThreadName(),pfH.getNumeroPaginas());
-		} catch (CreateThreadCtrlExc e) {
-			throw new TareaExc(e.toString(), e);
-		}
 	}
 	
 	private static void obtenerConfiguracion() throws TareaExc {
-		IProcessFile config = ProcessFileFactory.buscaConfiguracion();
+		ProcessFileCtrl cfg = new ProcessFileCtrl();
 		try {
-			configuracion = config.findConfiguration();
+			configuracion = cfg.findConfiguration();
 		} catch (ProcessFileCtrlExc e) {
 			throw new TareaExc(e.toString(), e);
 		}

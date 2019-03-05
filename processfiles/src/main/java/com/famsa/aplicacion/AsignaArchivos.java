@@ -29,16 +29,15 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
+import com.famsa.bean.Archivo;
 import com.famsa.bean.Archivos;
 import com.famsa.bean.Configuracion;
-import com.famsa.bean.ProcessFileBean;
+import com.famsa.controlador.ProcessFileCtrl;
 import com.famsa.enums.BDEnum;
 import com.famsa.exceptions.AsignaArchivosExc;
 import com.famsa.exceptions.ProcessFileCtrlExc;
 import com.famsa.fabricas.BaseDatosFactory;
-import com.famsa.fabricas.ProcessFileFactory;
 import com.famsa.interfaces.IBaseDatosConexion;
-import com.famsa.interfaces.IProcessFile;
 
 public class AsignaArchivos {
 
@@ -88,19 +87,17 @@ public class AsignaArchivos {
 
 			for (int num=0;num<archivosParaProcesar.getListArchivo().size();num++) {
 				
-				ProcessFileBean resultado = null;
 				archivosParaProcesar.getListArchivo().get(num).setXmlArchivo(archivoXML);
 				try {
 					msg = String.format("Procesando el archivo %s", 
 							archivosParaProcesar.getListArchivo().get(num).getFilePath());
 					logAsignaArchivos.log(Level.INFO, msg);
 
-					IProcessFile loadWS = ProcessFileFactory.loadWebServices();
-					resultado = loadWS.consumeWebService(archivosParaProcesar.getListArchivo().get(num));
-					
-					AsignaArchivos.mueveFile(resultado);
+					AsignaArchivos.mueveFile(
+							archivosParaProcesar.getListArchivo().get(num));
 						
-					 AsignaArchivos.guardaDatos(resultado);
+					AsignaArchivos.guardaDatos(
+							archivosParaProcesar.getListArchivo().get(num));
 							
 				} catch (ProcessFileCtrlExc e) {
 					throw new AsignaArchivosExc(e.toString(), e);
@@ -139,9 +136,9 @@ public class AsignaArchivos {
 	}
 	
 	private static void obtenerConfiguracion() throws AsignaArchivosExc {
-		IProcessFile config = ProcessFileFactory.buscaConfiguracion();
+		ProcessFileCtrl cfg = new ProcessFileCtrl();
 		try {
-			configuracion = config.findConfiguration();
+			configuracion = cfg.findConfiguration();
 		} catch (ProcessFileCtrlExc e) {
 			throw new AsignaArchivosExc(e.toString(), e);
 		}
@@ -180,15 +177,15 @@ public class AsignaArchivos {
     	return archivosPendientes;
     }
 
-    public static void mueveFile(ProcessFileBean myResultado) throws AsignaArchivosExc {
+    public static void mueveFile(Archivo myArchivo) throws AsignaArchivosExc {
     	
 		String dirDestino = 
 				configuracion.getFolder().getTemporal()+
 				archivoXML.substring(0, archivoXML.lastIndexOf('.'))+'\\'+
-				myResultado.getUuid()+'\\'+
-				myResultado.getFile();
+				myArchivo.getUuid()+'\\'+
+				myArchivo.getImageFileName();
 		
-		origenPath = FileSystems.getDefault().getPath(myResultado.getFilePath());
+		origenPath = FileSystems.getDefault().getPath(myArchivo.getFilePath());
 		destinoPath = FileSystems.getDefault().getPath(dirDestino);
 		
 		File directorio = new File(dirDestino);
@@ -202,7 +199,7 @@ public class AsignaArchivos {
     	
     }
     
-    public static void guardaDatos(ProcessFileBean proFilBean) throws ProcessFileCtrlExc {
+    public static void guardaDatos(Archivo myArchivo) throws ProcessFileCtrlExc {
         
 		int errorInt = 0;
 		String errorMsg = null;
@@ -212,14 +209,14 @@ public class AsignaArchivos {
 			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE] ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) }";
 			
 			try (CallableStatement cstmt = conn.prepareCall(sql)) {
-				cstmt.setString(1, proFilBean.getXmlFileName());
-				cstmt.setString(2, proFilBean.getCreationTime());
-				cstmt.setString(3, proFilBean.getFilePath());
-				cstmt.setString(4, proFilBean.getUuid());
-				cstmt.setString(5, proFilBean.getPath());
-				cstmt.setString(6, proFilBean.getFile());
-				cstmt.setString(7, proFilBean.getExtension());
-				cstmt.setString(8, proFilBean.getHash());
+				cstmt.setString(1, myArchivo.getXmlArchivo());
+				cstmt.setString(2, myArchivo.getCreationTime());
+				cstmt.setString(3, myArchivo.getFilePath());
+				cstmt.setString(4, myArchivo.getUuid());
+				cstmt.setString(5, myArchivo.getPath());
+				cstmt.setString(6, myArchivo.getImageFileName());
+				cstmt.setString(7, myArchivo.getExtension());
+				cstmt.setString(8, myArchivo.getHash());
 				
 				cstmt.registerOutParameter(9, java.sql.Types.INTEGER);
 				cstmt.registerOutParameter(10, java.sql.Types.VARCHAR);
@@ -230,17 +227,17 @@ public class AsignaArchivos {
 				errorMsg = cstmt.getString(10);
 				
 				if (errorInt!=0) {
-					proFilBean.setErrorInt(errorInt);
-					proFilBean.setErrorMsg(errorMsg);
+					myArchivo.setErrorInt(errorInt);
+					myArchivo.setErrorMsg(errorMsg);
 					
-					proFilBean.setCreationTime(null);
-					proFilBean.setExtension(null);
-					proFilBean.setFile(null);
-					proFilBean.setFilePath(null);
-					proFilBean.setHash(null);
-					proFilBean.setPath(null);
-					proFilBean.setUuid(null);
-					proFilBean.setXmlFileName(null);
+					myArchivo.setCreationTime(null);
+					myArchivo.setExtension(null);
+					myArchivo.setImageFileName(null);
+					myArchivo.setFilePath(null);
+					myArchivo.setHash(null);
+					myArchivo.setPath(null);
+					myArchivo.setUuid(null);
+					myArchivo.setXmlArchivo(null);
 					
 					logAsignaArchivos.log(Level.SEVERE, errorMsg, new Object());
 				}

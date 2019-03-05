@@ -1,16 +1,8 @@
 package com.famsa.controlador;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.bind.JAXBContext;
@@ -20,7 +12,6 @@ import javax.xml.bind.PropertyException;
 import javax.xml.bind.Unmarshaller;
 
 import com.famsa.aplicacion.AsignaArchivos;
-import com.famsa.bean.Archivo;
 import com.famsa.bean.Campo;
 import com.famsa.bean.Campos;
 import com.famsa.bean.ConexionBD;
@@ -28,32 +19,21 @@ import com.famsa.bean.Configuracion;
 import com.famsa.bean.Folder;
 import com.famsa.bean.Hilo;
 import com.famsa.bean.Monitor;
-import com.famsa.bean.ProcessFileBean;
 import com.famsa.bean.Tabla;
 import com.famsa.exceptions.ProcessFileCtrlExc;
-import com.famsa.interfaces.IProcessFile;
-import com.google.gson.Gson;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.json.JSONConfiguration;
 
-public class ProcessFileCtrl implements IProcessFile {
+public class ProcessFileCtrl {
 
 	static final Logger logger = Logger.getLogger(AsignaArchivos.class.getName());
 	private static final String FECHAARCHIVO = "FECHA_ARCHIVO";  
-	private static final String RUTATXT = "ruta.txt";
 	private static final String CADENASPLIT = "\\\\(?=[^\\\\]+$)";
 	private static final String CARPETACONFIG = "\\Expedientes\\Config\\";
+	private static final String RUTATXT = "ruta.txt";
 	private static final String XMLFILE = "config.xml";
-	static ProcessFileBean proFilBean = new ProcessFileBean();
 	String nomArcConf = null;
 	String nomCarpeta = null;
 	String[] tokens;
-	
-	@Override
+
 	public Configuracion findConfiguration() throws ProcessFileCtrlExc {
 		Configuracion configXML = new Configuracion();
 		
@@ -72,7 +52,11 @@ public class ProcessFileCtrl implements IProcessFile {
 		
 		File archivo = new File(nomArcConf);
 		if(!archivo.exists() && !archivo.isDirectory()) {
-			creaArchivoXML();
+			try {
+				creaArchivoXML();
+			} catch (ProcessFileCtrlExc e) {
+				throw new ProcessFileCtrlExc(e.toString(), e);
+			}
 		}
 		
 		//	---------------------------------------------------------------------------------------
@@ -103,7 +87,7 @@ public class ProcessFileCtrl implements IProcessFile {
 
 		return configXML;
 	}
-
+	
 	private void creaCarpeta(String carpeta) {
     	File directory = new File(carpeta);
 		if (! directory.exists()) {
@@ -149,7 +133,7 @@ public class ProcessFileCtrl implements IProcessFile {
 			}
 		}
 	}
-	
+
 	private Hilo creaHilo() {
 		Hilo hilo = new Hilo();
 		hilo.setMaximo(5);
@@ -282,86 +266,6 @@ public class ProcessFileCtrl implements IProcessFile {
 		preAutorizacion.setListCampo(listPreAut);
 
 		return preAutorizacion;
-	}
-
-	@Override
-	public String generaJson(String paramFilePath, String paramUuid, 
-			String paramCreationTime, String paramXMLFileName) throws ProcessFileCtrlExc {
-		 
-		String path = paramFilePath.substring(0, paramFilePath.lastIndexOf('/'));	
-		Path p = Paths.get(paramFilePath);
-		String fileName = p.getFileName().toString();
-		String ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length());
-
-		proFilBean.setXmlFileName(paramXMLFileName);
-		proFilBean.setCreationTime(paramCreationTime);
-		proFilBean.setFilePath(paramFilePath);
-		proFilBean.setUuid(paramUuid);
-		proFilBean.setPath(path);
-		proFilBean.setFile(fileName);
-		proFilBean.setExtension(ext);
-			
-        MessageDigest md;
-		try {
-			md = MessageDigest.getInstance("SHA-256");	// SHA, MD2, MD5, SHA-256, SHA-384...
-		} catch (NoSuchAlgorithmException e) {
-			logger.log(Level.SEVERE, e.toString(), e);
-			throw new ProcessFileCtrlExc(e.toString(), e);
-		}
-		
-		String hex = checksum(proFilBean.getFilePath(), md);
-		proFilBean.setHash(hex);
-
-		Gson gson = new Gson();
-		return gson.toJson(proFilBean);
-	}
-
-    private static String checksum(String filepath, MessageDigest md) throws ProcessFileCtrlExc {
-	
-        // file hashing with DigestInputStream
-        try (DigestInputStream dis = new DigestInputStream(new FileInputStream(filepath), md)) {
-            while (dis.read() != -1) ; //empty loop to clear the data
-            md = dis.getMessageDigest();
-        } catch (IOException e) {
-        	logger.log(Level.SEVERE, e.toString(), e);
-        	throw new ProcessFileCtrlExc(e.toString(), e);
-		}
-        // bytes to hex
-        StringBuilder result = new StringBuilder();
-        for (byte b : md.digest()) {
-            result.append(String.format("%02x", b));
-        }
-        return result.toString();
-    }
-
-	@Override
-	public ProcessFileBean consumeWebService(Archivo archivo) throws ProcessFileCtrlExc {
-    	String miUrl = String.format(
-    			"http://localhost:8080/processfiles/rest/processfiles/buscaArchivos/%s/%s/%s/%s", 
-    			archivo.getFilePath().replace('\\','/').replaceAll(" ", "%20"),
-    			archivo.getUuid(), 
-    			archivo.getCreationTime(), 
-    			archivo.getXmlArchivo());
-    	try {
-	    	ClientConfig clientConfig = new DefaultClientConfig();
-	    	clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
-	    	Client client = Client.create(clientConfig);
-	
-	    	WebResource webResource = client.resource(miUrl);
-	
-	    	ClientResponse response = webResource.accept("application/json")
-	    	        .type("application/json").get(ClientResponse.class);    	
-	    	
-	    	if (response.hasEntity()) {
-	    		String output = response.getEntity(String.class);
-	    		Gson gson = new Gson();
-	    		return gson.fromJson(output, ProcessFileBean.class);
-	    	}
-    	} catch(Exception e) {
-    		logger.log(Level.SEVERE, e.toString(), e);
-			throw new ProcessFileCtrlExc(e.toString(), e);
-    	}
-		return null;
 	}
 
 }

@@ -1,9 +1,6 @@
 package com.famsa.controlador;
 
 import java.io.File;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -13,22 +10,11 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 import com.famsa.aplicacion.CreateThread;
+import com.famsa.bean.Archivo;
 import com.famsa.bean.Configuracion;
-import com.famsa.bean.PbProcessFilesHalf;
-import com.famsa.enums.BDEnum;
 import com.famsa.exceptions.CreateThreadCtrlExc;
-import com.famsa.fabricas.BaseDatosFactory;
-import com.famsa.interfaces.IBaseDatosConexion;
-import com.famsa.interfaces.ICreateThread;
-import com.google.gson.Gson;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.api.json.JSONConfiguration;
 
-public class CreateThreadCtrl implements ICreateThread {
+public class CreateThreadCtrl {
 
 	static final Logger logger = Logger.getLogger(CreateThread.class.getName());
 	private static final String RUTATXT = "ruta.txt";
@@ -38,11 +24,8 @@ public class CreateThreadCtrl implements ICreateThread {
 	String nomArcConf = null;
 	String nomCarpeta = null;
 	String[] tokens;
-	List<PbProcessFilesHalf> resIds = new ArrayList<>();
+	List<Archivo> resIds = new ArrayList<>();
 	
-	private static final String APP_JSON = "application/json";  
-	
-	@Override
 	public Configuracion findConfiguration() throws CreateThreadCtrlExc {
 		Configuracion configXML = new Configuracion();
 		
@@ -96,165 +79,6 @@ public class CreateThreadCtrl implements ICreateThread {
 		
 	}
 	
-	@Override
-	public String generaJsonIds() throws CreateThreadCtrlExc {
-		try {
-			obtenerDatosIds();
-		} catch (CreateThreadCtrlExc e) {
-			throw new CreateThreadCtrlExc("#"+e.toString(), e);
-		}
-		Gson gson = new Gson();
-		return gson.toJson(resIds);
-	}
-
-	public void obtenerDatosIds() throws CreateThreadCtrlExc {
-		
-		IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
-		try (Connection conn = baseDatosConexion.getConnection()) {
-			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE_DATOS_IDS] }";
-			try (CallableStatement cstmt = conn.prepareCall(sql)) {
-				try (ResultSet resultSet = cstmt.executeQuery()) {
-					while(resultSet.next()) {
-						PbProcessFilesHalf fh = new PbProcessFilesHalf();
-						fh.setId(resultSet.getInt("ID"));
-						
-						resIds.add(fh);
-					}
-				}
-			}
-		} catch (Exception e) {
-			throw new CreateThreadCtrlExc("#"+e.toString(), e);
-		}
-	}
-
-	@Override
-	public String generaJsonDetalle(int paramId) throws CreateThreadCtrlExc {
-		PbProcessFilesHalf detalle = new PbProcessFilesHalf();
-		try {
-			detalle = obtenerDatosDetalle(paramId);
-		} catch (CreateThreadCtrlExc e) {
-			throw new CreateThreadCtrlExc("#"+e.toString(), e);
-		}
-		Gson gson = new Gson();
-		return gson.toJson(detalle);
-	}
-	
-	public PbProcessFilesHalf obtenerDatosDetalle(int paramId) throws CreateThreadCtrlExc {
-		
-		PbProcessFilesHalf resDetalle = new PbProcessFilesHalf();
-		IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
-		try (Connection conn = baseDatosConexion.getConnection()) {
-			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE_DATOS_DETALLE] ( ? ) }";
-			try (CallableStatement cstmt = conn.prepareCall(sql)) {
-				cstmt.setInt(1, paramId);
-				try (ResultSet resultSet = cstmt.executeQuery()) {
-					while(resultSet.next()) {
-						resDetalle.setId(resultSet.getInt("ID"));
-						resDetalle.setXmlFileName(resultSet.getString("XML_FILE_NAME"));
-						resDetalle.setUuid(resultSet.getString("UUID"));
-						resDetalle.setImageFileName(resultSet.getString("IMAGE_FILE_NAME"));
-					}
-				}
-			}
-		} catch (Exception e) {
-			throw new CreateThreadCtrlExc("#"+e.toString(), e);
-		}
-		return resDetalle;
-	}
-
-	@Override
-	public PbProcessFilesHalf consumeWebServiceDetalle(int id) throws CreateThreadCtrlExc {
-		String miUrl = String.format(
-				"http://localhost:8080/processfiles/rest/createthread/buscaDetalle/%d", id);
-    	try {
-	    	ClientConfig clientConfig = new DefaultClientConfig();
-	    	clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
-	    	Client client = Client.create(clientConfig);
-	
-	    	WebResource webResource = client.resource(miUrl);
-	
-	    	ClientResponse response = webResource.accept(APP_JSON)
-	    	        .type(APP_JSON).get(ClientResponse.class);    	
-	    	
-	    	if (response.hasEntity()) {
-	    		String output = response.getEntity(String.class);
-	    		Gson gson = new Gson();
-	    		return gson.fromJson(output, PbProcessFilesHalf.class);
-	    	}
-    	} catch(Exception e) {
-			throw new CreateThreadCtrlExc(e.toString(), e);
-    	}
-		return null;
-	}
-
-	@Override
-	public String generaJsonEnProceso(int id, String threadName, int numeroPaginas) throws CreateThreadCtrlExc {
-		PbProcessFilesHalf detalle = new PbProcessFilesHalf();
-		try {
-			detalle = obtenerDatosDetalle(id);
-			detalle.setThreadName(threadName);
-			detalle.setNumeroPaginas(numeroPaginas);
-		} catch (CreateThreadCtrlExc e) {
-			throw new CreateThreadCtrlExc("#"+e.toString(), e);
-		}
-		
-		try {
-			actualizaEnProceso(id,threadName,numeroPaginas);
-		} catch (CreateThreadCtrlExc e) {
-			throw new CreateThreadCtrlExc("#"+e.toString(), e);
-		}
-		
-		Gson gson = new Gson();
-		return gson.toJson(detalle);
-	}
-
-	private static void actualizaEnProceso(int id, String threadName, int numeroPaginas) throws CreateThreadCtrlExc {
-    	
-    	IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
-    	try (Connection conn = baseDatosConexion.getConnection()) {
-			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE_EN_PROCESO] ( ? , ? , ? , ? , ? ) }";
-			
-			try (CallableStatement cstmt = conn.prepareCall(sql)) {
-				cstmt.setInt(1, id);
-				cstmt.setString(2, threadName);
-				cstmt.setInt(3, numeroPaginas);
-				
-				cstmt.registerOutParameter(4, java.sql.Types.INTEGER);
-				cstmt.registerOutParameter(5, java.sql.Types.VARCHAR);
-			
-				cstmt.executeUpdate();
-			}
-		} catch (Exception e) {
-			throw new CreateThreadCtrlExc("#"+e.toString(), e);
-		}
-	}
-
-	@Override
-	public PbProcessFilesHalf consumeWebServiceEnProceso(int id, String threadName, int numeroPaginas) throws CreateThreadCtrlExc {
-		String miUrl = String.format(
-				"http://localhost:8080/processfiles/rest/createthread/enProceso/%d/%s/%d", 
-				id,threadName,numeroPaginas);
-    	try {
-	    	ClientConfig clientConfig = new DefaultClientConfig();
-	    	clientConfig.getFeatures().put(JSONConfiguration.FEATURE_POJO_MAPPING, Boolean.TRUE);
-	    	Client client = Client.create(clientConfig);
-	
-	    	WebResource webResource = client.resource(miUrl);
-	
-	    	ClientResponse response = webResource.accept(APP_JSON)
-	    	        .type(APP_JSON).get(ClientResponse.class);    	
-	    	
-	    	if (response.hasEntity()) {
-	    		
-	    		String output = response.getEntity(String.class);
-	    		Gson gson = new Gson();
-	    		return gson.fromJson(output, PbProcessFilesHalf.class);
-	    	}
-    	} catch(Exception e) {
-			throw new CreateThreadCtrlExc(e.toString(), e);
-    	}
-		return null;
-	}
 	
 	
 }
