@@ -2,15 +2,17 @@ package com.famsa.controlador;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import com.famsa.aplicacion.CreateThread;
 import com.famsa.bean.Archivo;
 import com.famsa.bean.Configuracion;
+import com.famsa.enums.BDEnum;
 import com.famsa.exceptions.ProcessFileCtrlExc;
 import com.famsa.exceptions.TareaExc;
+import com.famsa.fabricas.BaseDatosFactory;
+import com.famsa.interfaces.IBaseDatosConexion;
 import com.sun.media.jai.codec.FileSeekableStream;
 import com.sun.media.jai.codec.ImageCodec;
 import com.sun.media.jai.codec.ImageDecoder;
@@ -19,21 +21,20 @@ import com.sun.media.jai.codec.TIFFDecodeParam;
 
 public class Tarea implements Callable<String> {
 
-	private static final Logger logTarea = Logger.getLogger(CreateThread.class.getName());
 	static Configuracion configuracion = null;
 	static String msg = null;
 	
-	private Archivo pfHalf;
+	private Archivo archivoTarea;
 
-	public Tarea(Archivo pfHalf) {
+	public Tarea(Archivo archivoTarea) {
 		super();
-		this.pfHalf = pfHalf;
+		this.archivoTarea = archivoTarea;
 	}
-	public Archivo getPfHalf() {
-		return pfHalf;
+	public Archivo getArchivoTarea() {
+		return archivoTarea;
 	}
-	public void setPfHalf(Archivo pfHalf) {
-		this.pfHalf = pfHalf;
+	public void setArchivoTarea(Archivo archivoTarea) {
+		this.archivoTarea = archivoTarea;
 	}
 
 	@Override
@@ -41,34 +42,25 @@ public class Tarea implements Callable<String> {
 
 		String nombreTarea = Thread.currentThread().getName();
 		
-		getPfHalf().setThreadName(nombreTarea);
-		Tarea.proceso(getPfHalf());
+		getArchivoTarea().setThreadName(nombreTarea);
+		Tarea.proceso(getArchivoTarea());
 		
-		String indice = String.valueOf(getPfHalf().getId());
+		String indice = String.valueOf(getArchivoTarea().getId());
 		return nombreTarea+";"+indice;
 	}
 	
-	private static void proceso(Archivo pfH) throws TareaExc {
+	private static void proceso(Archivo archivoProceso) throws TareaExc {
 		try {
 			obtenerConfiguracion();
 		} catch (TareaExc e1) {
 			throw new TareaExc(e1.toString(), e1);
 		}
 		
-		int numPag = 0;
 		try {
-			numPag = obtenerNumeroDePaginas(
-					configuracion.getFolder().getTemporal()+
-					pfH.getXmlArchivo().substring(0, pfH.getXmlArchivo().lastIndexOf('.'))+"\\"+
-					pfH.getUuid()+"\\"+
-					pfH.getImageFileName());
+			numeroDePaginas(archivoProceso);
 		} catch (TareaExc e) {
 			throw new TareaExc(e.toString(), e);
 		}
-		msg = String.format("Numero de paginas:%d", numPag);
-		logTarea.log(Level.INFO, msg);
-		
-		pfH.setNumeroPaginas(numPag);
 		
 	}
 	
@@ -81,9 +73,18 @@ public class Tarea implements Callable<String> {
 		}
 	}
 	
-	private static int obtenerNumeroDePaginas(String filename) throws TareaExc {
+	private static void numeroDePaginas(Archivo archivoNumeroDePaginas) throws TareaExc {
+		/*
+		 * construye el file path de la nueva ubicacion del archivo "original"
+		 */
+		String nuevaUbicacion = 
+			configuracion.getFolder().getTemporal()+
+			archivoNumeroDePaginas.getXmlArchivo().substring(0, archivoNumeroDePaginas.getXmlArchivo().lastIndexOf('.'))+"\\"+
+			archivoNumeroDePaginas.getUuid()+"\\"+
+			archivoNumeroDePaginas.getImageFileName();		
+		
 		int numPages = -1;
-		File file = new File(filename);
+		File file = new File(nuevaUbicacion);
 		SeekableStream ss = null;
 		try {
 			ss = new FileSeekableStream(file);
@@ -103,8 +104,37 @@ public class Tarea implements Callable<String> {
 		} catch (IOException e) {
 			throw new TareaExc(e.toString(), e);
 		}
-		return numPages;
+
+		/*
+		 * actualiza informacion en la bade de datos
+		 */
+		archivoNumeroDePaginas.setNumeroPaginas(numPages);
+		
+		try {
+			Tarea.estatusEnProceso(archivoNumeroDePaginas);
+		} catch (TareaExc e) {
+			throw new TareaExc(e.toString(), e);
+		}
 	}
 	
-	
+	private static void estatusEnProceso(Archivo archivo) throws TareaExc {
+    	IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
+    	try (Connection conn = baseDatosConexion.getConnection()) {
+			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE_EN_PROCESO] ( ? , ? , ? , ? , ? ) }";
+			
+			try (CallableStatement cstmt = conn.prepareCall(sql)) {
+				cstmt.setInt(1, archivo.getId());
+				cstmt.setString(2, archivo.getThreadName());
+				cstmt.setInt(3, archivo.getNumeroPaginas());
+				
+				cstmt.registerOutParameter(4, java.sql.Types.INTEGER);
+				cstmt.registerOutParameter(5, java.sql.Types.VARCHAR);
+			
+				cstmt.executeUpdate();
+			}
+		} catch (Exception e) {
+			throw new TareaExc("#"+e.toString(), e);
+		}
+
+	}
 }

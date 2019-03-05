@@ -68,13 +68,11 @@ public class BuscaArchivos {
 	static String msg = null;
 
 	public static void main(String[] args) throws BuscaArchivosExc {
-
 		try {
 			BuscaArchivos.inicio();
 		} catch (BuscaArchivosExc e1) {
 			throw new BuscaArchivosExc(e1.toString(), e1);
 		}
-    	
     	String parametros = null;
     	for (String s: args) {
         	parametros = s;
@@ -165,7 +163,6 @@ public class BuscaArchivos {
         	archivos=marshalListToXMLFile(treeMap);
 			BuscaArchivos.guardaArchivo(archivos);
 			BuscaArchivos.mueveFile(archivos);
-
         } else {
         	logBuscaArchivos.log(Level.INFO, "NO EXISTEN ARCHIVOS PARA PROCESAR.");
         }
@@ -197,7 +194,7 @@ public class BuscaArchivos {
 			unArchivo.setUuid(UUID.randomUUID().toString().toUpperCase());
 			
 			//	datos complementarios
-			String path = value.substring(0, value.lastIndexOf('/'));	
+			String path = value.substring(0, value.lastIndexOf('\\'));
 			Path p = Paths.get(value);
 			String fileName = p.getFileName().toString();
 			String ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length());
@@ -227,7 +224,7 @@ public class BuscaArchivos {
     	if (!arch.exists()) {
     		File file = new File(archivoXML);
     		JAXBContext jaxbContext = null;
-
+    		
 			try {
 				jaxbContext = JAXBContext.newInstance(Archivos.class);
 			} catch (JAXBException e3) {
@@ -309,7 +306,7 @@ public class BuscaArchivos {
 
     		String dirDestino = 
     				configuracion.getFolder().getTemporal()+
-    				archivoXML.substring(0, archivoXML.lastIndexOf('.'))+'\\'+
+    				paramArchivoXML.substring(0, paramArchivoXML.lastIndexOf('.'))+'\\'+
     				myArchivos.getListArchivo().get(i).getUuid()+'\\'+
     				myArchivos.getListArchivo().get(i).getImageFileName();
     		
