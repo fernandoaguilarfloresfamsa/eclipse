@@ -11,7 +11,7 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.PropertyException;
 import javax.xml.bind.Unmarshaller;
 
-import com.famsa.aplicacion.AsignaArchivos;
+import com.famsa.aplicacion.BuscaArchivos;
 import com.famsa.bean.Campo;
 import com.famsa.bean.Campos;
 import com.famsa.bean.ConexionBD;
@@ -24,7 +24,7 @@ import com.famsa.exceptions.ProcessFileCtrlExc;
 
 public class ProcessFileCtrl {
 
-	static final Logger logger = Logger.getLogger(AsignaArchivos.class.getName());
+	static final Logger logger = Logger.getLogger(BuscaArchivos.class.getName());
 	private static final String FECHAARCHIVO = "FECHA_ARCHIVO";  
 	private static final String CADENASPLIT = "\\\\(?=[^\\\\]+$)";
 	private static final String CARPETACONFIG = "\\Expedientes\\Config\\";
@@ -267,5 +267,5 @@ public class ProcessFileCtrl {
 
 		return preAutorizacion;
 	}
-
+	
 }

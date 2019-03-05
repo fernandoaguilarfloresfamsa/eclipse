@@ -10,14 +10,24 @@ package com.famsa.aplicacion;
  * 			crea el sistema de carpetas necesarias para el funcionamiento del sistema.
  * 			busca en el directorio de entrada los archivos para procesar.
  * 			guarda la lista de los archivos en el archivo que recibio como parametro de entrada.
+ * 			guarda la misma informacion en la base de datos
  * 
  */
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -42,15 +52,18 @@ import com.famsa.bean.Archivo;
 import com.famsa.bean.Archivos;
 import com.famsa.bean.Configuracion;
 import com.famsa.controlador.ProcessFileCtrl;
+import com.famsa.enums.BDEnum;
 import com.famsa.exceptions.BuscaArchivosExc;
 import com.famsa.exceptions.ProcessFileCtrlExc;
+import com.famsa.fabricas.BaseDatosFactory;
+import com.famsa.interfaces.IBaseDatosConexion;
 
 public class BuscaArchivos {
 	
 	static final Logger logBuscaArchivos = Logger.getLogger(BuscaArchivos.class.getName());
 	static FileHandler fhBuscaArchivos;
 	static Configuracion configuracion = null;
-	static String archivo;
+	static String paramArchivoXML;
 	static String archivoXML;
 	static String msg = null;
 
@@ -68,7 +81,7 @@ public class BuscaArchivos {
         }
 
     	if (parametros!=null) {
-        	archivo=args[0];
+    		paramArchivoXML=args[0];
 			try {
 				BuscaArchivos.findFiles();
 			} catch (BuscaArchivosExc e) {
@@ -145,16 +158,17 @@ public class BuscaArchivos {
         }
         
         if (hmap.size()!=0) {
+        	
         	Map<FileTime, String> treeMap = new TreeMap<>(hmap);
-	        try {
-				marshalListToXMLFile(treeMap);
-			} catch (BuscaArchivosExc e) {
-				throw new BuscaArchivosExc(e.toString(), e);
-			}
+        	Archivos archivos = null;
+        	
+        	archivos=marshalListToXMLFile(treeMap);
+			BuscaArchivos.guardaArchivo(archivos);
+			BuscaArchivos.mueveFile(archivos);
+
         } else {
         	logBuscaArchivos.log(Level.INFO, "NO EXISTEN ARCHIVOS PARA PROCESAR.");
         }
-
 	}
 
     private static File[] getFileList(String dirPath) {
@@ -162,7 +176,7 @@ public class BuscaArchivos {
         return dir.listFiles();
     }
 
-    public static void marshalListToXMLFile(Map<FileTime, String> map) throws BuscaArchivosExc {
+    public static Archivos marshalListToXMLFile(Map<FileTime, String> map) throws BuscaArchivosExc {
     	
     	Archivos archivosEnCarpeta = new Archivos();
     	archivosEnCarpeta.setListArchivo(new ArrayList<Archivo>());
@@ -171,6 +185,7 @@ public class BuscaArchivos {
 		Iterator<Entry<FileTime, String>> it = s.iterator();
 		
 		while ( it.hasNext() ) {
+			//	datos principales
 			Entry<FileTime, String> entry = it.next();
 			FileTime key = entry.getKey();
 			String value = entry.getValue();
@@ -181,10 +196,33 @@ public class BuscaArchivos {
 			unArchivo.setFilePath(value);
 			unArchivo.setUuid(UUID.randomUUID().toString().toUpperCase());
 			
+			//	datos complementarios
+			String path = value.substring(0, value.lastIndexOf('/'));	
+			Path p = Paths.get(value);
+			String fileName = p.getFileName().toString();
+			String ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length());
+		
+			unArchivo.setPath(path);
+			unArchivo.setImageFileName(fileName);
+			unArchivo.setExtension(ext);
+			unArchivo.setXmlArchivo(paramArchivoXML);
+		
+			//	obtengo el hash
+	        MessageDigest md;
+			try {
+				md = MessageDigest.getInstance("SHA-256");	// SHA, MD2, MD5, SHA-256, SHA-384...
+			} catch (NoSuchAlgorithmException e) {
+				throw new BuscaArchivosExc(e.toString(), e);
+			}	
+		
+			String hex;
+			hex = checksum(value, md);
+			unArchivo.setHash(hex);
+			
 			archivosEnCarpeta.getListArchivo().add(unArchivo);
         }
 
-		archivoXML = configuracion.getFolder().getEncontrados()+archivo;
+		archivoXML = configuracion.getFolder().getEncontrados()+paramArchivoXML;
     	File arch = new File(archivoXML);
     	if (!arch.exists()) {
     		File file = new File(archivoXML);
@@ -215,6 +253,78 @@ public class BuscaArchivos {
     		msg = String.format("EL NOMBRE DE ARCHIVO XML YA EXISTE [%s].", archivoXML);
     		logBuscaArchivos.log(Level.INFO, msg);
     	}
+    	
+    	return archivosEnCarpeta;
     }
     
+    private static String checksum(String filepath, MessageDigest md) throws BuscaArchivosExc {
+    	
+        // file hashing with DigestInputStream
+        try (DigestInputStream dis = new DigestInputStream(new FileInputStream(filepath), md)) {
+            while (dis.read() != -1) ; //empty loop to clear the data
+            md = dis.getMessageDigest();
+        } catch (IOException e) {
+        	throw new BuscaArchivosExc(e.toString(), e);
+		}
+        // bytes to hex
+        StringBuilder result = new StringBuilder();
+        for (byte b : md.digest()) {
+            result.append(String.format("%02x", b));
+        }
+        return result.toString();
+    }
+
+    private static void guardaArchivo(Archivos myArchivos) throws BuscaArchivosExc {
+    	
+    	for(int i=0;i<myArchivos.getListArchivo().size();i++) {
+        	IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
+        	try (Connection conn = baseDatosConexion.getConnection()) {
+    			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE] ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) }";
+    			
+    			try (CallableStatement cstmt = conn.prepareCall(sql)) {
+    				cstmt.setString(1, myArchivos.getListArchivo().get(i).getXmlArchivo());
+    				cstmt.setString(2, myArchivos.getListArchivo().get(i).getCreationTime());
+    				cstmt.setString(3, myArchivos.getListArchivo().get(i).getFilePath());
+    				cstmt.setString(4, myArchivos.getListArchivo().get(i).getUuid());
+    				cstmt.setString(5, myArchivos.getListArchivo().get(i).getPath());
+    				cstmt.setString(6, myArchivos.getListArchivo().get(i).getImageFileName());
+    				cstmt.setString(7, myArchivos.getListArchivo().get(i).getExtension());
+    				cstmt.setString(8, myArchivos.getListArchivo().get(i).getHash());
+    				
+    				cstmt.registerOutParameter(9, java.sql.Types.INTEGER);
+    				cstmt.registerOutParameter(10, java.sql.Types.VARCHAR);
+    			
+    				cstmt.executeUpdate();
+    			}
+    		} catch (Exception e) {
+    			throw new BuscaArchivosExc(e.toString(), e);
+    		}
+    	}
+	}
+	
+    private static void mueveFile(Archivos myArchivos) throws BuscaArchivosExc {
+    	for(int i=0;i<myArchivos.getListArchivo().size();i++) {
+        	Path origenPath = null; 
+        	Path destinoPath = null;
+
+    		String dirDestino = 
+    				configuracion.getFolder().getTemporal()+
+    				archivoXML.substring(0, archivoXML.lastIndexOf('.'))+'\\'+
+    				myArchivos.getListArchivo().get(i).getUuid()+'\\'+
+    				myArchivos.getListArchivo().get(i).getImageFileName();
+    		
+    		origenPath = FileSystems.getDefault().getPath(myArchivos.getListArchivo().get(i).getFilePath());
+    		destinoPath = FileSystems.getDefault().getPath(dirDestino);
+    		
+    		File directorio = new File(dirDestino);
+    		directorio.mkdirs();
+    		
+    		try {
+    			Files.move(origenPath, destinoPath, StandardCopyOption.REPLACE_EXISTING);
+    		} catch (IOException e) {
+    			throw new BuscaArchivosExc(e.toString(), e);
+    		}
+    	}
+    }
+
 }

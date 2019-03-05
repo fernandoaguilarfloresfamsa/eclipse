@@ -14,24 +14,23 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 @XmlRootElement(name="archivo")
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "archivo", propOrder = {
-    "creationTime",
-    "filePath",
     "id",
     "xmlArchivo",
 	"imageFileName",
 	"threadName",
 	"numeroPaginas",
 	"fhTermino",
+	"path",
+	"extension",
+	"hash",
 	"errorInt",
 	"errorMsg",
+    "creationTime",
+    "filePath",
     "uuid"
 })
 public class Archivo {
 
-	@XmlElement(required = true)
-	protected String creationTime;
-	@XmlElement(required = true)
-	protected String filePath;
 	@XmlElement(required = false)
 	protected int id;
 	@XmlElement(required = false)
@@ -45,32 +44,26 @@ public class Archivo {
 	@XmlElement(required = false)
 	protected Date fhTermino;
 	@XmlElement(required = false)
-	protected int errorInt;
-	@XmlElement(required = false)
-	protected String errorMsg;
-	@XmlElement(required = false)
 	protected String path;
 	@XmlElement(required = false)
 	protected String extension;
 	@XmlElement(required = false)
 	protected String hash;
+	@XmlElement(required = false)
+	protected int errorInt;
+	@XmlElement(required = false)
+	protected String errorMsg;
+	
+	
+	@XmlElement(required = true)
+	protected String creationTime;
+	@XmlElement(required = true)
+	protected String filePath;
 	@XmlElement(name = "uuid")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     @XmlSchemaType(name = "NMTOKEN")	
 	protected String uuid;
 	
-	public String getCreationTime() {
-		return creationTime;
-	}
-	public void setCreationTime(String creationTime) {
-		this.creationTime = creationTime;
-	}
-	public String getFilePath() {
-		return filePath;
-	}
-	public void setFilePath(String filePath) {
-		this.filePath = filePath;
-	}
 	public int getId() {
 		return id;
 	}
@@ -107,18 +100,6 @@ public class Archivo {
 	public void setFhTermino(Date fhTermino) {
 		this.fhTermino = fhTermino;
 	}
-	public int getErrorInt() {
-		return errorInt;
-	}
-	public void setErrorInt(int errorInt) {
-		this.errorInt = errorInt;
-	}
-	public String getErrorMsg() {
-		return errorMsg;
-	}
-	public void setErrorMsg(String errorMsg) {
-		this.errorMsg = errorMsg;
-	}
 	public String getPath() {
 		return path;
 	}
@@ -137,6 +118,30 @@ public class Archivo {
 	public void setHash(String hash) {
 		this.hash = hash;
 	}
+	public int getErrorInt() {
+		return errorInt;
+	}
+	public void setErrorInt(int errorInt) {
+		this.errorInt = errorInt;
+	}
+	public String getErrorMsg() {
+		return errorMsg;
+	}
+	public void setErrorMsg(String errorMsg) {
+		this.errorMsg = errorMsg;
+	}
+	public String getCreationTime() {
+		return creationTime;
+	}
+	public void setCreationTime(String creationTime) {
+		this.creationTime = creationTime;
+	}
+	public String getFilePath() {
+		return filePath;
+	}
+	public void setFilePath(String filePath) {
+		this.filePath = filePath;
+	}
 	public String getUuid() {
 		return uuid;
 	}
@@ -145,10 +150,10 @@ public class Archivo {
 	}
 	@Override
 	public String toString() {
-		return "Archivo [creationTime=" + creationTime + ", filePath=" + filePath + ", id=" + id + ", xmlArchivo="
-				+ xmlArchivo + ", imageFileName=" + imageFileName + ", threadName=" + threadName + ", numeroPaginas="
-				+ numeroPaginas + ", fhTermino=" + fhTermino + ", errorInt=" + errorInt + ", errorMsg=" + errorMsg
-				+ ", path=" + path + ", extension=" + extension + ", hash=" + hash + ", uuid=" + uuid + "]";
+		return "Archivo [id=" + id + ", xmlArchivo=" + xmlArchivo + ", imageFileName=" + imageFileName + ", threadName="
+				+ threadName + ", numeroPaginas=" + numeroPaginas + ", fhTermino=" + fhTermino + ", path=" + path
+				+ ", extension=" + extension + ", hash=" + hash + ", errorInt=" + errorInt + ", errorMsg=" + errorMsg
+				+ ", creationTime=" + creationTime + ", filePath=" + filePath + ", uuid=" + uuid + "]";
 	}
 	
 }
