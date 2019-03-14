@@ -1,5 +1,23 @@
 package com.famsa.aplicacion;
 
+/*
+ * Autor:	Fernando Aguilar Flores.
+ * 
+ * Parametros de Entrada
+ * 			Ninguno
+ * 
+ * Descripción
+ * 			crea el sistema de carpetas necesarias para el funcionamiento del sistema.
+ * 			busca en la base de datos los archivos pendientes por procesar
+ * 			crea un hilo con dos tareas
+ * 				obtiene el numero de paginas del archivo
+ * 				separa las paginas del archivo original y las guarda por separado
+ * 				busca codigo de barras
+ * 					obtiene la informacion que se encripto en el codigo de barras
+ * 			actualiza estado del registro original
+ * 			guarda a detalle la informacion de las paginas procesadas en la base de datos
+ * 
+ */
 import java.io.File;
 import java.io.IOException;
 import java.sql.CallableStatement;
@@ -43,16 +61,19 @@ public class CreateThread {
 		} catch (CreateThreadExc e1) {
 			throw new CreateThreadExc(e1.toString(), e1);
 		}
+		if (args.length!=2) {
+			throw new CreateThreadExc("FALTA INFORMACION PARA CONTINUAR CON EL PROCESO.");
+		}
     	
 		Archivos listArchivos = new Archivos();
     	try {
-    		listArchivos=CreateThread.datosDetalle();
+    		listArchivos=CreateThread.datosDetalle(args[0], args[1]);
 		} catch (CreateThreadExc e1) {
 			throw new CreateThreadExc(e1.toString(),e1);
 		}
     	
     	if(listArchivos.getListArchivo().isEmpty()) {
-    		logCreateThread.log(Level.SEVERE,"NO EXISTEN ARCHIVOS PARA PROCESAR.");
+    		logCreateThread.log(Level.INFO,"NO EXISTEN ARCHIVOS PARA PROCESAR.");
         	throw new CreateThreadExc("NO EXISTEN ARCHIVOS PARA PROCESAR.");
     	}
     	
@@ -108,18 +129,20 @@ public class CreateThread {
 		}		
 	}
 	
-	private static Archivos datosDetalle() throws CreateThreadExc {
+	private static Archivos datosDetalle(String indice1, String indice2) throws CreateThreadExc {
 		Archivos lista = new Archivos();
 		lista.setListArchivo(new ArrayList<Archivo>());
 		
 		IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
 		try (Connection conn = baseDatosConexion.getConnection()) {
-			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE_DATOS_DETALLE] ( ? , ? ) }";
+			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE_DATOS_IDS] ( ? , ? , ? , ? ) }";
 			
 			try (CallableStatement cstmt = conn.prepareCall(sql)) {
-
-				cstmt.registerOutParameter(1, java.sql.Types.INTEGER);
-				cstmt.registerOutParameter(2, java.sql.Types.VARCHAR);
+				cstmt.setInt(1, Integer.parseInt(indice1));
+				cstmt.setInt(2, Integer.parseInt(indice2));
+				
+				cstmt.registerOutParameter(3, java.sql.Types.INTEGER);
+				cstmt.registerOutParameter(4, java.sql.Types.VARCHAR);
 				
 				try (ResultSet resultSet = cstmt.executeQuery()) {
 					while(resultSet.next()) {
@@ -138,6 +161,7 @@ public class CreateThread {
 				}
 			}
 		} catch (Exception e) {
+			logCreateThread.log(Level.INFO,e.toString(), e);
 			throw new CreateThreadExc(e.toString(), e);
 		}
 		return lista;
@@ -149,6 +173,9 @@ public class CreateThread {
 		
 		ExecutorService executor = Executors.newFixedThreadPool(listaArchivos.getListArchivo().size());
 		for(int i=0;i<listaArchivos.getListArchivo().size();i++) {
+			
+			logCreateThread.info(listaArchivos.getListArchivo().get(i).getImageFileName());
+			
 			Future<String> future = executor.submit(new Tarea(listaArchivos.getListArchivo().get(i)));
 			listFuture.add(future);
 		}
@@ -158,7 +185,7 @@ public class CreateThread {
 				String msg = String.format("%s",fut.get());
 				logCreateThread.info(msg);
 			} catch (InterruptedException e) {
-				logCreateThread.log(Level.WARNING, e.toString(), e);
+				logCreateThread.log(Level.INFO, e.toString(), e);
 				Thread.currentThread().interrupt();
 			} catch (ExecutionException e) {
 				throw new CreateThreadExc(e.toString(), e);

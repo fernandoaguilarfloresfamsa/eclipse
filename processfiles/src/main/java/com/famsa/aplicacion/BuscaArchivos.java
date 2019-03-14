@@ -196,8 +196,9 @@ public class BuscaArchivos {
 			//	datos complementarios
 			String path = value.substring(0, value.lastIndexOf('\\'));
 			Path p = Paths.get(value);
-			String fileName = p.getFileName().toString();
-			String ext = fileName.substring(fileName.lastIndexOf('.') + 1, fileName.length());
+			String fileName = p.getFileName().toString().substring(0, p.getFileName().toString().lastIndexOf('.'));
+			String ext = p.getFileName().toString().substring(
+					p.getFileName().toString().lastIndexOf('.') + 1, p.getFileName().toString().length());
 		
 			unArchivo.setPath(path);
 			unArchivo.setImageFileName(fileName);
@@ -273,30 +274,37 @@ public class BuscaArchivos {
 
     private static void guardaArchivo(Archivos myArchivos) throws BuscaArchivosExc {
     	
-    	for(int i=0;i<myArchivos.getListArchivo().size();i++) {
-        	IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
-        	try (Connection conn = baseDatosConexion.getConnection()) {
-    			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE] ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) }";
-    			
-    			try (CallableStatement cstmt = conn.prepareCall(sql)) {
-    				cstmt.setString(1, myArchivos.getListArchivo().get(i).getXmlArchivo());
-    				cstmt.setString(2, myArchivos.getListArchivo().get(i).getCreationTime());
-    				cstmt.setString(3, myArchivos.getListArchivo().get(i).getFilePath());
-    				cstmt.setString(4, myArchivos.getListArchivo().get(i).getUuid());
-    				cstmt.setString(5, myArchivos.getListArchivo().get(i).getPath());
-    				cstmt.setString(6, myArchivos.getListArchivo().get(i).getImageFileName());
-    				cstmt.setString(7, myArchivos.getListArchivo().get(i).getExtension());
-    				cstmt.setString(8, myArchivos.getListArchivo().get(i).getHash());
-    				
-    				cstmt.registerOutParameter(9, java.sql.Types.INTEGER);
-    				cstmt.registerOutParameter(10, java.sql.Types.VARCHAR);
-    			
-    				cstmt.executeUpdate();
-    			}
-    		} catch (Exception e) {
-    			throw new BuscaArchivosExc(e.toString(), e);
-    		}
-    	}
+    	IBaseDatosConexion baseDatosConexion = BaseDatosFactory.getBaseDatosConexion(BDEnum.BD_SQL_SERVER);
+    	try (Connection conn = baseDatosConexion.getConnection()) {
+			String sql = "{ call [PROMADM].[dbo].[SP_PROCESS_FILE] ( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? ) }";
+			
+			for(int i=0;i<myArchivos.getListArchivo().size();i++) {
+				try (CallableStatement cstmt = conn.prepareCall(sql)) {
+					cstmt.setString(1, myArchivos.getListArchivo().get(i).getXmlArchivo());
+					cstmt.setString(2, myArchivos.getListArchivo().get(i).getCreationTime());
+					cstmt.setString(3, myArchivos.getListArchivo().get(i).getFilePath());
+					cstmt.setString(4, myArchivos.getListArchivo().get(i).getUuid());
+					cstmt.setString(5, myArchivos.getListArchivo().get(i).getPath());
+					cstmt.setString(6, myArchivos.getListArchivo().get(i).getImageFileName());
+					cstmt.setString(7, myArchivos.getListArchivo().get(i).getExtension());
+					cstmt.setString(8, myArchivos.getListArchivo().get(i).getHash());
+					
+					cstmt.registerOutParameter(9, java.sql.Types.INTEGER);
+					cstmt.registerOutParameter(10, java.sql.Types.VARCHAR);
+				
+					cstmt.executeUpdate();
+				}
+
+				msg = String.format("UUID:%s   Archivo:%s",
+						myArchivos.getListArchivo().get(i).getUuid(),
+						myArchivos.getListArchivo().get(i).getImageFileName()+"."+
+						myArchivos.getListArchivo().get(i).getExtension());
+				logBuscaArchivos.log(Level.INFO, msg);
+			}
+		} catch (Exception e) {
+			throw new BuscaArchivosExc(e.toString(), e);
+		}
+
 	}
 	
     private static void mueveFile(Archivos myArchivos) throws BuscaArchivosExc {
@@ -308,7 +316,8 @@ public class BuscaArchivos {
     				configuracion.getFolder().getTemporal()+
     				paramArchivoXML.substring(0, paramArchivoXML.lastIndexOf('.'))+'\\'+
     				myArchivos.getListArchivo().get(i).getUuid()+'\\'+
-    				myArchivos.getListArchivo().get(i).getImageFileName();
+    				myArchivos.getListArchivo().get(i).getImageFileName()+"."+
+    				myArchivos.getListArchivo().get(i).getExtension();
     		
     		origenPath = FileSystems.getDefault().getPath(myArchivos.getListArchivo().get(i).getFilePath());
     		destinoPath = FileSystems.getDefault().getPath(dirDestino);
