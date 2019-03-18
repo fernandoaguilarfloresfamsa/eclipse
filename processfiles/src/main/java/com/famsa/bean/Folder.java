@@ -18,6 +18,10 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
     "imagenTif",
     "imagenDifTif",
     "imagenFallo",
+    "jasperReports",
+    "jasperReportsJPG",
+    "sourceTIF",
+    "temporalTIF",
     "autorizacion",
     "preautorizacion"
 })
@@ -35,6 +39,14 @@ public class Folder {
 	protected String imagenDifTif;
 	@XmlElement(required = true)
 	protected String imagenFallo;
+	@XmlElement(required = true)
+	protected String jasperReports;
+	@XmlElement(required = true)
+	protected String jasperReportsJPG;
+	@XmlElement(required = true)
+	protected String sourceTIF;
+	@XmlElement(required = true)
+	protected String temporalTIF;
 	@XmlElement(required = true)
 	protected String autorizacion;
 	@XmlElement(name = "preautorizacion")
@@ -78,6 +90,30 @@ public class Folder {
 	public void setImagenFallo(String imagenFallo) {
 		this.imagenFallo = imagenFallo;
 	}
+	public String getJasperReports() {
+		return jasperReports;
+	}
+	public void setJasperReports(String jasperReports) {
+		this.jasperReports = jasperReports;
+	}
+	public String getJasperReportsJPG() {
+		return jasperReportsJPG;
+	}
+	public void setJasperReportsJPG(String jasperReportsJPG) {
+		this.jasperReportsJPG = jasperReportsJPG;
+	}
+	public String getSourceTIF() {
+		return sourceTIF;
+	}
+	public void setSourceTIF(String sourceTIF) {
+		this.sourceTIF = sourceTIF;
+	}
+	public String getTemporalTIF() {
+		return temporalTIF;
+	}
+	public void setTemporalTIF(String temporalTIF) {
+		this.temporalTIF = temporalTIF;
+	}
 	public String getAutorizacion() {
 		return autorizacion;
 	}
@@ -90,12 +126,13 @@ public class Folder {
 	public void setPreautorizacion(String preautorizacion) {
 		this.preautorizacion = preautorizacion;
 	}
-	
 	@Override
 	public String toString() {
 		return "Folder [entrada=" + entrada + ", encontrados=" + encontrados + ", temporal=" + temporal + ", imagenTif="
-				+ imagenTif + ", imagenDifTif=" + imagenDifTif + ", imagenFallo=" + imagenFallo + ", autorizacion="
-				+ autorizacion + ", preautorizacion=" + preautorizacion + "]";
+				+ imagenTif + ", imagenDifTif=" + imagenDifTif + ", imagenFallo=" + imagenFallo + ", jasperReports="
+				+ jasperReports + ", jasperReportsJPG=" + jasperReportsJPG + ", sourceTIF=" + sourceTIF
+				+ ", temporalTIF=" + temporalTIF + ", autorizacion=" + autorizacion + ", preautorizacion="
+				+ preautorizacion + "]";
 	}
 	
 }

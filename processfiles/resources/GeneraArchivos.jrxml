@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.6.0.final using JasperReports Library version 6.6.0  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="GeneraArchivos" pageWidth="595" pageHeight="842" columnWidth="555" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="b5b28046-7b48-4a93-89a2-71aead97a9a1">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="ConexionLocal"/>
+	<queryString language="SQL">
+		<![CDATA[SELECT	CONVERT(varchar(255), NEWID())+'|'+
+					LTRIM(RTRIM(CONVERT(VARCHAR(20),(DATEADD(day, ROUND(DATEDIFF(day, '2010-01-01', '2018-12-31') * RAND(CHECKSUM(NEWID())), 0),DATEADD(second, CHECKSUM(NEWID()) % D.ALEATORIO, '2015-01-01'))),120)))+'|'+
+					LTRIM(RTRIM(CONVERT(VARCHAR(20),D.ALEATORIO)))+'|'+
+					dbo.fnNumberToWords(D.ALEATORIO) AS CONTENIDO
+			FROM	(
+						SELECT	Cast(RAND()*(1000000-1000)+1000 as int) AS ALEATORIO
+					) D]]>
+	</queryString>
+	<field name="CONTENIDO" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="CONTENIDO"/>
+	</field>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="79" splitType="Stretch">
+			<componentElement>
+				<reportElement x="0" y="0" width="281" height="79" uuid="7e6cc7f4-ca3e-446e-9a53-d1cf8b92bc7a"/>
+				<jr:barbecue xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" type="PDF417" drawText="false" checksumRequired="false" barHeight="79">
+					<jr:codeExpression><![CDATA[$F{CONTENIDO}]]></jr:codeExpression>
+				</jr:barbecue>
+			</componentElement>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="35" splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band height="61" splitType="Stretch">
+			<componentElement>
+				<reportElement x="7" y="5" width="541" height="51" uuid="05ad0ea2-bfb2-4338-836a-2721c1c01760"/>
+				<jr:barbecue xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" type="Code128" drawText="false" checksumRequired="false">
+					<jr:codeExpression><![CDATA[$F{CONTENIDO}]]></jr:codeExpression>
+				</jr:barbecue>
+			</componentElement>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="125" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="45" width="561" height="41" uuid="002bf883-8b84-487a-a90c-38db21a59f8d"/>
+				<textElement verticalAlignment="Middle"/>
+				<textFieldExpression><![CDATA[$F{CONTENIDO}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="45" splitType="Stretch">
+			<componentElement>
+				<reportElement x="172" y="0" width="211" height="45" uuid="41e2d918-077b-4974-8ce4-97cbad8e3006"/>
+				<jr:barbecue xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" type="EAN13" drawText="false" checksumRequired="false">
+					<jr:codeExpression><![CDATA["012345678900"]]></jr:codeExpression>
+				</jr:barbecue>
+			</componentElement>
+		</band>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch">
+			<textField pattern="MMM d, yyyy h:mm:ss a">
+				<reportElement x="-10" y="15" width="171" height="21" uuid="b30e6d9b-d0f8-49e8-ab87-8efbb3d29588"/>
+				<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>

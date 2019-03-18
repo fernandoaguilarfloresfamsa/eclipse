@@ -185,14 +185,18 @@ public class ProcessFileCtrl {
 
 	private Folder creaFolder() {
 		Folder folder = new Folder();
-		folder.setEntrada(tokens[0]+"\\Expedientes\\Entrada\\");
-		folder.setEncontrados(tokens[0]+"\\Expedientes\\Proceso\\001-Encontrados\\");
-		folder.setTemporal(tokens[0]+"\\Expedientes\\Proceso\\002-Temporal\\");
-		folder.setImagenTif(tokens[0]+"\\Expedientes\\Temporal\\Imagen\\Tif\\%BC(1)%\\");
-		folder.setImagenDifTif(tokens[0]+"\\Expedientes\\Error\\Imagen\\DifTif\\%BC(1)%\\");
-		folder.setImagenFallo(tokens[0]+"\\Expedientes\\Error\\Imagen\\Tif\\%BC(1)%\\");
-		folder.setAutorizacion(tokens[0]+"\\Expedientes\\Procesados\\Autorizacion\\%BC(1)%\\%BC(2)%\\%BC(3)%\\");
-		folder.setPreautorizacion(tokens[0]+"\\Expedientes\\Procesados\\Cap_Pago\\%BC(1)%\\%BC(2)%\\");
+		folder.setEntrada(			tokens[0]+"\\Expedientes\\Entrada\\");
+		folder.setEncontrados(		tokens[0]+"\\Expedientes\\Proceso\\001-Encontrados\\");
+		folder.setTemporal(			tokens[0]+"\\Expedientes\\Proceso\\002-Temporal\\");
+		folder.setImagenTif(		tokens[0]+"\\Expedientes\\Temporal\\Imagen\\Tif\\%BC(1)%\\");
+		folder.setImagenDifTif(		tokens[0]+"\\Expedientes\\Error\\Imagen\\DifTif\\%BC(1)%\\");
+		folder.setImagenFallo(		tokens[0]+"\\Expedientes\\Error\\Imagen\\Tif\\%BC(1)%\\");
+		folder.setJasperReports(	"C:\\Users\\RDEFAGUILA\\git\\eclipse\\processfiles\\resources\\");
+		folder.setJasperReportsJPG(	tokens[0]+"\\Expedientes\\JPG\\");
+		folder.setSourceTIF(		"C:\\Users\\RDEFAGUILA\\Pictures\\OracleMagazine\\");
+		folder.setTemporalTIF(		tokens[0]+"\\Expedientes\\TIFF\\");
+		folder.setAutorizacion(		tokens[0]+"\\Expedientes\\Procesados\\Autorizacion\\%BC(1)%\\%BC(2)%\\%BC(3)%\\");
+		folder.setPreautorizacion(	tokens[0]+"\\Expedientes\\Procesados\\Cap_Pago\\%BC(1)%\\%BC(2)%\\");
 		
 		return folder;
 	}
