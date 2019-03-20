@@ -196,6 +196,7 @@ public class ProcessFileCtrl {
 		folder.setSourceTIF(		"C:\\Users\\RDEFAGUILA\\Pictures\\OracleMagazine\\");
 		folder.setTemporalTIF(		tokens[0]+"\\Expedientes\\TIFF\\");
 		folder.setAutorizacion(		tokens[0]+"\\Expedientes\\Procesados\\Autorizacion\\%BC(1)%\\%BC(2)%\\%BC(3)%\\");
+		folder.setBatch(			tokens[0]+"\\Expedientes\\Batch\\");
 		folder.setPreautorizacion(	tokens[0]+"\\Expedientes\\Procesados\\Cap_Pago\\%BC(1)%\\%BC(2)%\\");
 		
 		return folder;

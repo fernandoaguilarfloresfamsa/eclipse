@@ -164,6 +164,7 @@ public class GeneraArchivos extends JFrame implements KeyListener, ActionListene
 		GeneraArchivos.creaCarpeta(configuracion.getFolder().getJasperReportsJPG());
 		GeneraArchivos.creaCarpeta(configuracion.getFolder().getSourceTIF());
 		GeneraArchivos.creaCarpeta(configuracion.getFolder().getTemporalTIF());
+		GeneraArchivos.creaCarpeta(configuracion.getFolder().getBatch());
 
 		Date date = new Date();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS-");
@@ -409,7 +410,7 @@ public class GeneraArchivos extends JFrame implements KeyListener, ActionListene
     }
     
     private static String generaNombreArchivo() {
-		DateFormat dateFormat = new SimpleDateFormat("dd-mm-yyyy-HH-mm-ss-SSS");
+		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS");
 		Date date = new Date();
 		return dateFormat.format(date);
     }

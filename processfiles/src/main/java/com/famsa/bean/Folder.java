@@ -23,6 +23,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
     "sourceTIF",
     "temporalTIF",
     "autorizacion",
+    "batch",
     "preautorizacion"
 })
 public class Folder {
@@ -49,6 +50,8 @@ public class Folder {
 	protected String temporalTIF;
 	@XmlElement(required = true)
 	protected String autorizacion;
+	@XmlElement(required = true)
+	protected String batch;
 	@XmlElement(name = "preautorizacion")
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     @XmlSchemaType(name = "NMTOKEN")	
@@ -120,6 +123,12 @@ public class Folder {
 	public void setAutorizacion(String autorizacion) {
 		this.autorizacion = autorizacion;
 	}
+	public String getBatch() {
+		return batch;
+	}
+	public void setBatch(String batch) {
+		this.batch = batch;
+	}
 	public String getPreautorizacion() {
 		return preautorizacion;
 	}
@@ -131,8 +140,8 @@ public class Folder {
 		return "Folder [entrada=" + entrada + ", encontrados=" + encontrados + ", temporal=" + temporal + ", imagenTif="
 				+ imagenTif + ", imagenDifTif=" + imagenDifTif + ", imagenFallo=" + imagenFallo + ", jasperReports="
 				+ jasperReports + ", jasperReportsJPG=" + jasperReportsJPG + ", sourceTIF=" + sourceTIF
-				+ ", temporalTIF=" + temporalTIF + ", autorizacion=" + autorizacion + ", preautorizacion="
-				+ preautorizacion + "]";
+				+ ", temporalTIF=" + temporalTIF + ", autorizacion=" + autorizacion + ", batch=" + batch
+				+ ", preautorizacion=" + preautorizacion + "]";
 	}
 	
 }

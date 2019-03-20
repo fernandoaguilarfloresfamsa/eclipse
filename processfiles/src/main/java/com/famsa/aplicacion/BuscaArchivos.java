@@ -101,6 +101,7 @@ public class BuscaArchivos {
 		creaCarpeta(configuracion.getHilo().getPathLogErr());
 		creaCarpeta(configuracion.getFolder().getEncontrados());
 		creaCarpeta(configuracion.getFolder().getTemporal());
+		creaCarpeta(configuracion.getFolder().getBatch());
 
 		Date date = new Date();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS-");
